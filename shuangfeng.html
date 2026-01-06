@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双峰插云 - 西湖十景</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", "PingFang SC", sans-serif;
+        }
+
+        /* 页面基础布局 - 替换首页背景为第二张蓝色调图片 */
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), 
+                        url("https://p11-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/81f1fbe2eb5841f390408ca9a1a12720.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010315513753F8FBD9E9D79AC9D53A&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1768031497&x-signature=r4PrV9WkohGWPfGEpzzsr%2BxAOtg%3D") no-repeat center center;
+            background-size: cover;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* 首页样式 */
+        #home-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 标题区域 */
+        .title-section {
+            text-align: center;
+            margin-bottom: 60px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .main-title {
+            font-size: 48px;
+            margin-bottom: 15px;
+            letter-spacing: 5px;
+            position: relative;
+        }
+
+        .main-title::after {
+            content: "";
+            display: block;
+            width: 150px;
+            height: 3px;
+            background: #fff;
+            margin: 10px auto 0;
+        }
+
+        .sub-title {
+            font-size: 18px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+        }
+
+        /* 按钮容器 */
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* 通用按钮样式 */
+        .action-btn {
+            padding: 18px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(120deg, #2a5b84, #1e4260);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(120deg, #3a7ca8, #28587c);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 按钮点击波纹效果 */
+        .action-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .action-btn:active::after {
+            width: 300px;
+            height: 300px;
+            opacity: 0;
+        }
+
+        /* 内容页面通用样式（初始隐藏） */
+        .content-page {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            padding-top: 40px;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: rgba(42, 91, 132, 0.8);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 999;
+        }
+
+        .back-btn:hover {
+            background: rgba(58, 124, 168, 0.9);
+        }
+
+        /* 科普答题样式 */
+        .question-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        .question-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-item {
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-item:hover {
+            background: rgba(42, 91, 132, 0.5);
+        }
+
+        .option-item.correct {
+            background: rgba(46, 125, 50, 0.6);
+        }
+
+        .option-item.wrong {
+            background: rgba(198, 40, 40, 0.6);
+        }
+
+        .answer-hint {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .answer-hint.show {
+            display: block;
+        }
+
+        .correct-hint {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+        }
+
+        .wrong-hint {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #F44336;
+        }
+
+        /* 重新排版的风景展示样式 */
+        .scenery-section {
+            margin: 40px 0;
+        }
+
+        .scenery-title {
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            letter-spacing: 2px;
+        }
+
+        .scenery-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .scenery-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .scenery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 响应式调整风景项布局 */
+        @media (max-width: 768px) {
+            .scenery-item {
+                flex-direction: column;
+            }
+        }
+
+        .scenery-img-container {
+            flex: 1;
+            min-width: 300px;
+            height: 300px;
+            cursor: zoom-in; /* 鼠标样式变为放大 */
+        }
+
+        .scenery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .scenery-img:hover {
+            transform: scale(1.02); /* 轻微放大效果 */
+        }
+
+        .scenery-desc-container {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .scenery-subtitle {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #e0f7fa;
+        }
+
+        .scenery-desc {
+            font-size: 16px;
+            line-height: 1.8;
+            opacity: 0.9;
+        }
+
+        /* 图片全屏查看样式 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            cursor: zoom-out;
+        }
+
+        .image-modal.show {
+            display: flex;
+        }
+
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            animation: zoomIn 0.3s ease;
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 36px;
+            }
+
+            .action-btn {
+                font-size: 18px;
+                padding: 15px 0;
+            }
+
+            .scenery-img-container {
+                min-width: 100%;
+                height: 250px;
+            }
+
+            .scenery-desc-container {
+                padding: 20px;
+            }
+
+            .scenery-subtitle {
+                font-size: 20px;
+            }
+
+            .scenery-desc {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-title {
+                font-size: 28px;
+            }
+
+            .sub-title {
+                font-size: 16px;
+            }
+
+            .action-btn {
+                font-size: 16px;
+                padding: 12px 0;
+            }
+
+            .scenery-img-container {
+                height: 200px;
+            }
+
+            .scenery-title {
+                font-size: 24px;
+            }
+            
+            .modal-image {
+                max-width: 95%;
+                max-height: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 首页（仅标题+按钮） -->
+    <div id="home-page">
+        <div class="title-section">
+            <h1 class="main-title">双峰插云</h1>
+            <p class="sub-title">西湖十景 · 南高峰与北高峰 云雾缭绕</p>
+        </div>
+        <div class="btn-container">
+            <button class="action-btn" id="kepuBtn">科普答题</button>
+            <button class="action-btn" id="fengjingBtn">风景展示</button>
+        </div>
+    </div>
+
+    <!-- 科普答题页面（初始隐藏） -->
+    <div id="kepu-page" class="content-page">
+        <button class="back-btn" onclick="backToHome()">返回首页</button>
+        <h2 style="text-align: center; margin-bottom: 20px; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">双峰插云 · 科普答题</h2>
+        
+        <!-- 题目1 -->
+        <div class="question-card">
+            <div class="question-title">1. 双峰插云中的“双峰”指的是哪两座山峰？</div>
+            <div class="option-list">
+                <div class="option-item" data-answer="correct" data-hint="回答正确！南高峰与北高峰合称“双峰”，是西湖十景“双峰插云”的核心景观。">A. 南高峰、北高峰</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！玉皇山和宝石山是西湖其他著名山峰，并非双峰插云的“双峰”。">B. 玉皇山、宝石山</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！雷峰塔在夕照山，保俶塔在宝石山，并非山峰名称。">C. 雷峰塔、保俶塔</div>
+            </div>
+            <div class="answer-hint"></div>
+        </div>
+
+        <!-- 题目2 -->
+        <div class="question-card">
+            <div class="question-title">2. 双峰插云被列入“西湖十景”的朝代是？</div>
+            <div class="option-list">
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！唐朝尚未有“西湖十景”的官方评选。">A. 唐朝</div>
+                <div class="option-item" data-answer="correct" data-hint="回答正确！西湖十景最早由南宋宫廷画师评选，双峰插云是其中之一。">B. 南宋</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！清朝虽对西湖十景有修订，但并非最初评选朝代。">C. 清朝</div>
+            </div>
+            <div class="answer-hint"></div>
+        </div>
+
+        <!-- 题目3 -->
+        <div class="question-card">
+            <div class="question-title">3. 双峰插云的最佳观赏时节是？</div>
+            <div class="option-list">
+                <div class="option-item" data-answer="correct" data-hint="回答正确！春季多雨多雾，双峰在云雾中若隐若现，是观赏双峰插云的最佳时节。">A. 春季</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！夏季西湖以荷花景观为特色，并非双峰插云的最佳观赏期。">B. 夏季</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！冬季虽有雪景，但云雾景观不如春季典型。">C. 冬季</div>
+            </div>
+            <div class="answer-hint"></div>
+        </div>
+
+        <!-- 题目4（新增） -->
+        <div class="question-card">
+            <div class="question-title">4. 北高峰的海拔约为多少米？</div>
+            <div class="option-list">
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！南高峰海拔约257米。">A. 257米</div>
+                <div class="option-item" data-answer="correct" data-hint="回答正确！北高峰海拔314米，是西湖周边最高峰。">B. 314米</div>
+                <div class="option-item" data-answer="wrong" data-hint="回答错误！玉皇山海拔约237米。">C. 237米</div>
+            </div>
+            <div class="answer-hint"></div>
+        </div>
+    </div>
+
+    <!-- 风景展示页面（初始隐藏，移除拼图） -->
+    <div id="fengjing-page" class="content-page">
+        <button class="back-btn" onclick="backToHome()">返回首页</button>
+        
+        <!-- 重新排版的风景展示区域 -->
+        <div class="scenery-section">
+            <h2 class="scenery-title">双峰插云 · 绝美风光</h2>
+            
+            <div class="scenery-gallery">
+                <!-- 第一张风景图 -->
+                <div class="scenery-item">
+                    <div class="scenery-img-container" onclick="openImageModal(this)">
+                        <img src="https://p11-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/50ec9b9b593d4c3e803a1d4ce6760cba.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010315513753F8FBD9E9D79AC9D53A&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1768031497&x-signature=%2FeHn2gZ20elAWsK5hKoSmS9Ec6I%3D" alt="双峰云海奇景" class="scenery-img">
+                    </div>
+                    <div class="scenery-desc-container">
+                        <h3 class="scenery-subtitle">双峰云海</h3>
+                        <p class="scenery-desc">云雾缭绕间，双峰如利剑插天，尽显“双峰插云”的经典意境。每当春秋时节，山间云雾翻涌，南高峰与北高峰在云海中时隐时现，宛如仙境，是西湖十景中极具代表性的画面，也是历代文人墨客吟咏的经典景致。</p>
+                    </div>
+                </div>
+
+                <!-- 第二张风景图 -->
+                <div class="scenery-item">
+                    <div class="scenery-img-container" onclick="openImageModal(this)">
+                        <img src="https://p11-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/81f1fbe2eb5841f390408ca9a1a12720.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010315513753F8FBD9E9D79AC9D53A&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1768031497&x-signature=r4PrV9WkohGWPfGEpzzsr%2BxAOtg%3D" alt="山水诗意画卷" class="scenery-img">
+                    </div>
+                    <div class="scenery-desc-container">
+                        <h3 class="scenery-subtitle">山水诗意</h3>
+                        <p class="scenery-desc">湖水如镜，青山如黛，亭台点缀其间，尽显江南山水的温婉与灵秀。这里的山水格局完美诠释了中国传统山水画的意境，平静的湖面倒映着双峰的轮廓，微风拂过，波光粼粼，与双峰插云的雄奇相映成趣，构成一幅浑然天成的江南画卷。</p>
+                    </div>
+                </div>
+
+                <!-- 第三张风景图 -->
+                <div class="scenery-item">
+                    <div class="scenery-img-container" onclick="openImageModal(this)">
+                        <img src="https://p11-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/c9d0b42ead1247399e1d8e894049cf41.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010315513753F8FBD9E9D79AC9D53A&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1768031497&x-signature=0iXMu4GeKQ4lmos7Bv2fi%2BfB4vE%3D" alt="落日熔金盛景" class="scenery-img">
+                    </div>
+                    <div class="scenery-desc-container">
+                        <h3 class="scenery-subtitle">落日熔金</h3>
+                        <p class="scenery-desc">夕阳西下，霞光漫天，山峰剪影与橙红天际相融，为双峰插云增添了别样的壮丽色彩。傍晚时分，落日的余晖洒在双峰之上，将山体染成温暖的金色，云雾也被镀上一层橘红，整个场景恢弘而浪漫，是观赏双峰插云的另一绝佳时刻。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片全屏查看模态框 -->
+    <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+        <img src="" alt="全屏风景图" class="modal-image" id="modalImage">
+    </div>
+
+    <script>
+        // 页面切换核心逻辑
+        const homePage = document.getElementById('home-page');
+        const kepuPage = document.getElementById('kepu-page');
+        const fengjingPage = document.getElementById('fengjing-page');
+        const kepuBtn = document.getElementById('kepuBtn');
+        const fengjingBtn = document.getElementById('fengjingBtn');
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+
+        // 跳转到科普答题
+        kepuBtn.addEventListener('click', () => {
+            homePage.style.display = 'none';
+            kepuPage.style.display = 'block';
+        });
+
+        // 跳转到风景展示
+        fengjingBtn.addEventListener('click', () => {
+            homePage.style.display = 'none';
+            fengjingPage.style.display = 'block';
+        });
+
+        // 返回首页
+        function backToHome() {
+            kepuPage.style.display = 'none';
+            fengjingPage.style.display = 'none';
+            homePage.style.display = 'flex';
+            // 重置答题样式
+            resetAnswerStyle();
+            // 关闭图片模态框
+            closeImageModal();
+        }
+
+        // 科普答题逻辑
+        const optionItems = document.querySelectorAll('.option-item');
+        optionItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // 重置当前题目所有选项
+                const parentList = item.parentElement;
+                const siblings = parentList.querySelectorAll('.option-item');
+                siblings.forEach(s => s.classList.remove('correct', 'wrong'));
+                
+                // 标记当前选项
+                const answerType = item.getAttribute('data-answer');
+                item.classList.add(answerType);
+                
+                // 显示提示
+                const hint = item.getAttribute('data-hint');
+                const hintBox = parentList.nextElementSibling;
+                hintBox.textContent = hint;
+                hintBox.classList.add('show');
+                hintBox.classList.remove('correct-hint', 'wrong-hint');
+                hintBox.classList.add(answerType === 'correct' ? 'correct-hint' : 'wrong-hint');
+            });
+        });
+
+        // 重置答题样式（返回首页时）
+        function resetAnswerStyle() {
+            optionItems.forEach(item => {
+                item.classList.remove('correct', 'wrong');
+            });
+            document.querySelectorAll('.answer-hint').forEach(hint => {
+                hint.classList.remove('show');
+                hint.textContent = '';
+            });
+        }
+
+        // 打开图片全屏查看
+        function openImageModal(container) {
+            const img = container.querySelector('.scenery-img');
+            modalImage.src = img.src;
+            modalImage.alt = img.alt;
+            imageModal.classList.add('show');
+            // 禁止页面滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭图片全屏查看
+        function closeImageModal() {
+            imageModal.classList.remove('show');
+            modalImage.src = '';
+            // 恢复页面滚动
+            document.body.style.overflow = '';
+        }
+
+        // 按ESC键关闭全屏图片
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && imageModal.classList.contains('show')) {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>

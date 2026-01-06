@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>柳浪闻莺·知识问答+柳韵记忆翻牌</title>
+    <!-- 引入Tailwind和字体图标 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        // Tailwind自定义配置
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        willow: '#7da673',
+                        willow-deep: '#5a8a4f',
+                        willow-light: '#b8d6b1',
+                        warbler: '#e8c86a',
+                        ink: '#2a3328',
+                    },
+                    fontFamily: {
+                        kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+                        song: ['"SimSun"', '"STSong"', 'serif'],
+                    },
+                    keyframes: {
+                        fade-in: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        flip: {
+                            '0%': { transform: 'rotateY(0deg)' },
+                            '50%': { transform: 'rotateY(90deg)' },
+                            '100%': { transform: 'rotateY(0deg)' },
+                        },
+                        success-pop: {
+                            '0%': { opacity: 0, transform: 'scale(0.8)' },
+                            '70%': { transform: 'scale(1.1)' },
+                            '100%': { opacity: 1, transform: 'scale(1)' },
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fade-in 1s ease-out forwards',
+                        'flip': 'flip 0.6s ease-in-out forwards',
+                        'success-pop': 'success-pop 0.6s ease-out forwards',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* 国风基础样式 */
+            .chinese-border {
+                border: 1px solid #7da673;
+                border-radius: 6px;
+                position: relative;
+            }
+            .chinese-border::before {
+                content: '';
+                position: absolute;
+                top: 6px;
+                left: 6px;
+                right: 6px;
+                bottom: 6px;
+                border: 1px dashed #e8c86a;
+                border-radius: 4px;
+                pointer-events: none;
+            }
+            
+            /* 首页背景 */
+            .home-container {
+                background: linear-gradient(to bottom, rgba(248,250,246,0.2), rgba(248,250,246,0.9)), 
+                            url('https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/6f5ef69b71fb4b3ba52852feaf4873d7.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010122132800B1AFB2D2E870A34FE4&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767881609&x-signature=Z9DROqMbuXwJOPt7qvcritytsno%3D');
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+            
+            /* 功能卡片样式 */
+            .menu-card {
+                background: rgba(248,250,246,0.85);
+                backdrop-filter: blur(8px);
+                transition: all 0.4s ease;
+                border: 1px solid rgba(125,166,115,0.4);
+                border-radius: 12px;
+                overflow: hidden;
+                position: relative;
+            }
+            .menu-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                transition: left 0.8s ease;
+            }
+            .menu-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 12px 24px rgba(90,138,79,0.2);
+            }
+            .menu-card:hover::before {
+                left: 100%;
+            }
+            
+            /* 知识问答模块样式 */
+            .quiz-container {
+                background: linear-gradient(to bottom, rgba(248,250,246,0.2), rgba(248,250,246,0.9)), 
+                            url('https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/16b09e3968e94de09e7825a03b7f814f.jpg~tplv-a9rns2rl98-24:720:720.image?rcl=2026010122132800B1AFB2D2E870A34FE4&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767881609&x-signature=yFcnpyqw3UgKBLvZXQl%2FQ5FY1No%3D');
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+                padding: 20px 0;
+                display: none; /* 初始隐藏 */
+            }
+            .quiz-card {
+                background: rgba(248,250,246,0.95);
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                border: 1px solid #7da673;
+                position: relative;
+                overflow: hidden;
+                width: 90%;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            .quiz-option {
+                transition: all 0.3s ease;
+                border: 1px solid #d8e6d8;
+                border-radius: 8px;
+            }
+            .quiz-option:hover {
+                background: rgba(125,166,115,0.1);
+                border-color: #7da673;
+                transform: translateX(4px);
+            }
+            .quiz-option.correct {
+                background: rgba(72,187,120,0.2);
+                border-color: #48bb78;
+            }
+            .quiz-option.wrong {
+                background: rgba(220,38,38,0.2);
+                border-color: #dc2626;
+            }
+
+            /* 柳韵记忆翻牌游戏样式 */
+            .memory-container {
+                background: linear-gradient(to bottom, #f8faf6, #e6f0e8);
+                width: 100vw;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                display: none; /* 初始隐藏 */
+            }
+            .memory-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .memory-board {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr); /* 调整为5列适配10张卡片 */
+                gap: 8px;
+                max-width: 400px;
+                width: 100%;
+                margin: 0 auto;
+            }
+            .memory-card {
+                aspect-ratio: 1/1;
+                perspective: 1000px;
+                cursor: pointer;
+            }
+            .memory-card-inner {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                transition: transform 0.6s;
+                transform-style: preserve-3d;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                border-radius: 8px;
+            }
+            .memory-card.flipped .memory-card-inner {
+                transform: rotateY(180deg);
+            }
+            .memory-card.matched .memory-card-inner {
+                transform: rotateY(180deg);
+                opacity: 0.8;
+            }
+            .memory-card-front, .memory-card-back {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .memory-card-front {
+                background: #7da673;
+                color: white;
+                font-size: 2rem;
+            }
+            .memory-card-back {
+                background: white;
+                transform: rotateY(180deg);
+                padding: 4px;
+            }
+            .memory-card-icon {
+                font-size: 1.8rem;
+                color: #5a8a4f;
+            }
+            .memory-stats {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 400px;
+                margin-bottom: 15px;
+                padding: 8px 12px;
+                background: rgba(248,250,246,0.8);
+                border-radius: 8px;
+                border: 1px solid #b8d6b1;
+            }
+            .memory-controls {
+                margin-top: 20px;
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .memory-tip {
+                margin-top: 15px;
+                font-size: 0.9rem;
+                color: #5a8a4f;
+                text-align: center;
+                max-width: 400px;
+            }
+            .memory-success {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(248,250,246,0.98);
+                padding: 30px;
+                border-radius: 12px;
+                border: 2px solid #7da673;
+                text-align: center;
+                z-index: 100;
+                display: none;
+                animation: success-pop 0.6s ease-out forwards;
+                max-width: 80%;
+            }
+            .memory-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 99;
+                display: none;
+            }
+            
+            /* 通用样式 */
+            .chinese-divider {
+                height: 2px;
+                background: linear-gradient(90deg, transparent, #7da673, transparent);
+                width: 70%;
+                margin: 0 auto;
+            }
+            .back-btn {
+                background: rgba(248,250,246,0.9);
+                border: 1px solid #7da673;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                padding: 8px 12px;
+                font-size: 14px;
+                z-index: 20;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                display: none; /* 初始隐藏返回按钮 */
+            }
+            .back-btn:hover {
+                background: white;
+                transform: scale(1.05);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+            .action-btn {
+                background: #f8faf6;
+                border: 1px solid #7da673;
+                color: #2a3328;
+                border-radius: 8px;
+                padding: 8px 16px;
+                font-family: 'KaiTi', 'STKaiti', serif;
+                font-size: 14px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            .action-btn:hover {
+                background: #e8f0e6;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+            .action-btn.primary {
+                background: #7da673;
+                color: white;
+                border-color: #5a8a4f;
+            }
+            .action-btn.primary:hover {
+                background: #5a8a4f;
+            }
+        }
+    </style>
+</head>
+<body class="font-kai text-ink min-h-screen overflow-x-hidden">
+    <!-- 首页 -->
+    <div id="startScreen" class="fixed inset-0 home-container flex flex-col items-center justify-start p-4 pt-10 pb-16 z-50">
+        <!-- 功能按钮区 -->
+        <div class="w-full max-w-md flex flex-col gap-8 relative z-10 mb-16 px-4">
+            <!-- 知识问答卡片 -->
+            <div id="quizBtn" class="menu-card py-10 px-6 cursor-pointer animate-fade-in" style="animation-delay: 0.5s">
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fa fa-book text-[clamp(2rem,7vw,3rem)] text-willow-deep"></i>
+                    <div>
+                        <h3 class="text-[clamp(1.2rem,5vw,1.5rem)] font-bold text-ink">柳浪知识问答</h3>
+                        <p class="text-sm text-gray-600 mt-1">解锁柳浪闻莺的趣味小知识</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 柳韵记忆翻牌卡片 -->
+            <div id="memoryBtn" class="menu-card py-10 px-6 cursor-pointer animate-fade-in" style="animation-delay: 0.8s">
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fa fa-refresh text-[clamp(2rem,7vw,3rem)] text-warbler"></i>
+                    <div>
+                        <h3 class="text-[clamp(1.2rem,5vw,1.5rem)] font-bold text-ink">柳韵记忆翻牌</h3>
+                        <p class="text-sm text-gray-600 mt-1">记住柳浪元素，配对相同图案</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部简介 -->
+        <div class="absolute bottom-6 w-full max-w-lg chinese-border p-4 bg-sky/70 rounded-lg relative z-10 animate-fade-in px-4" style="animation-delay: 1s">
+            <h4 class="text-center font-bold text-willow-deep mb-3 text-base">柳浪闻莺 · 景点简介</h4>
+            <p class="text-[clamp(0.8rem,3vw,0.9rem)] leading-relaxed font-song text-ink text-center">
+                柳浪闻莺是西湖十景之五，位于西湖东南岸，以青翠柳色和婉转莺鸣闻名。
+                春日柳丝飘拂，黄莺啼鸣，形成"柳浪闻莺"的诗意景观，是西湖最具生机的景致之一。
+            </p>
+        </div>
+    </div>
+
+    <!-- 游戏主容器 -->
+    <div id="gameContainer" class="fixed inset-0 z-40">
+        <!-- 返回按钮 -->
+        <button id="backBtn" class="back-btn px-4 py-2 z-20 text-ink hover:bg-white text-sm">
+            <i class="fa fa-arrow-left mr-1"></i> 返回首页
+        </button>
+
+        <!-- 知识问答模块 -->
+        <div id="quizModule" class="quiz-container w-full h-full flex items-center justify-center p-4">
+            <div class="quiz-card p-6 w-full max-w-md relative">
+                <h2 class="text-[clamp(1.2rem,4vw,1.8rem)] text-center text-willow-deep mb-6 font-bold">
+                    「柳浪知多少」
+                </h2>
+                <div class="chinese-divider mb-8"></div>
+                
+                <div id="quizQuestion" class="mb-8 text-[clamp(0.9rem,3vw,1.1rem)] leading-relaxed font-song text-ink text-center">
+                    1. 柳浪闻莺是“西湖十景”中的第几个景？
+                </div>
+                
+                <div id="quizOptions" class="space-y-4 mb-8">
+                    <!-- 选项会动态生成 -->
+                </div>
+                
+                <div id="quizResult" class="mt-4 text-center text-base hidden"></div>
+                
+                <div id="quizNext" class="mt-8 text-center hidden">
+                    <button onclick="nextQuestion()" class="action-btn primary">
+                        下一题 <i class="fa fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 柳韵记忆翻牌游戏模块 -->
+        <div id="memoryModule" class="memory-container">
+            <div class="memory-header">
+                <h2 class="text-[clamp(1.5rem,5vw,2rem)] text-willow-deep font-bold">「柳韵记忆翻牌」</h2>
+                <p class="text-sm text-gray-600 mt-2">记住柳浪元素图案，找出所有配对</p>
+            </div>
+            
+            <!-- 游戏统计 - 修改配对数量显示 -->
+            <div class="memory-stats">
+                <div>翻牌次数: <span id="flipCount">0</span></div>
+                <div>已配对: <span id="matchCount">0</span>/5</div>
+            </div>
+            
+            <div class="memory-board" id="memoryBoard"></div>
+            
+            <div class="memory-controls">
+                <button id="restartBtn" class="action-btn">
+                    <i class="fa fa-refresh mr-1"></i> 重新开始
+                </button>
+                <button id="hintBtn" class="action-btn">
+                    <i class="fa fa-lightbulb-o mr-1"></i> 查看提示
+                </button>
+                <button id="easyModeBtn" class="action-btn primary">
+                    <i class="fa fa-star mr-1"></i> 简单模式
+                </button>
+            </div>
+            
+            <div class="memory-tip" id="memoryTip">
+                提示：点击卡片翻面，找到相同的柳浪元素图案即可配对成功
+            </div>
+            
+            <!-- 成功弹窗 -->
+            <div class="memory-overlay" id="memoryOverlay"></div>
+            <div class="memory-success" id="memorySuccess">
+                <h2 class="text-willow-deep text-xl md:text-2xl mb-4">🎉 挑战成功！</h2>
+                <p class="mb-4 text-sm md:text-base">你总共翻牌 <span id="finalFlipCount">0</span> 次</p>
+                <p class="mb-6 text-sm md:text-base">真是过目不忘的小能手~</p>
+                <button class="action-btn primary" onclick="backToMenu()">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 柳浪闻莺问答题库
+        const quizBank = [
+            {
+                question: "1. 柳浪闻莺是“西湖十景”中的第几个景？",
+                options: ["① 第四个", "② 第五个", "③ 第六个"],
+                correct: 1,
+                tip: "柳浪闻莺是西湖十景之五哦~"
+            },
+            {
+                question: "2. 柳浪闻莺位于西湖的哪个方位？",
+                options: ["① 东南岸", "② 西北岸", "③ 西南岸"],
+                correct: 0,
+                tip: "柳浪闻莺位于西湖东南岸的南山路~"
+            },
+            {
+                question: "3. 柳浪闻莺以哪种柳树最为著名？",
+                options: ["① 垂柳", "② 旱柳", "③ 杞柳"],
+                correct: 0,
+                tip: "柳浪闻莺以柔美的垂柳为特色，形成柳浪景观~"
+            },
+            {
+                question: "4. 柳浪闻莺最佳观赏时节是？",
+                options: ["① 夏季", "② 秋季", "③ 春季"],
+                correct: 2,
+                tip: "春季是柳浪闻莺最美的时节，嫩柳抽芽，黄莺啼鸣~"
+            },
+            {
+                question: "5. 柳浪闻莺景区内的主要鸟类是？",
+                options: ["① 黄莺", "② 白鹭", "③ 喜鹊"],
+                correct: 0,
+                tip: "柳浪闻莺因黄莺的婉转啼鸣而得名~"
+            }
+        ];
+        
+        // 全局变量
+        let currentQuizIndex = 0;
+        // 记忆翻牌相关变量 - 移除异常图标，保留5个正常显示的图标
+        let memoryData = {
+            icons: [
+                "fa-leaf", "fa-bird", "fa-tree", "fa-tint", "fa-sun-o" // 仅保留5个正常显示的图标
+            ],
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            flipCount: 0,
+            isProcessing: false,
+            easyMode: false
+        };
+        
+        // ========== 知识问答逻辑 ==========
+        function initQuiz() {
+            currentQuizIndex = 0;
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            const quiz = quizBank[currentQuizIndex];
+            document.getElementById('quizQuestion').textContent = quiz.question;
+            
+            const optionsEl = document.getElementById('quizOptions');
+            optionsEl.innerHTML = '';
+            
+            quiz.options.forEach((option, idx) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'quiz-option p-4 cursor-pointer text-center text-sm';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => checkAnswer(idx);
+                optionsEl.appendChild(optionDiv);
+            });
+            
+            document.getElementById('quizResult').classList.add('hidden');
+            document.getElementById('quizNext').classList.add('hidden');
+        }
+
+        function checkAnswer(choice) {
+            const quiz = quizBank[currentQuizIndex];
+            const resultEl = document.getElementById('quizResult');
+            const options = document.querySelectorAll('.quiz-option');
+            
+            // 标记答案状态
+            options.forEach((el, idx) => {
+                el.style.pointerEvents = 'none';
+                if (idx === quiz.correct) {
+                    el.classList.add('correct');
+                } else if (idx === choice && idx !== quiz.correct) {
+                    el.classList.add('wrong');
+                }
+            });
+            
+            // 显示结果
+            if (choice !== quiz.correct) {
+                resultEl.textContent = `❌ 回答错误~ ${quiz.tip}`;
+                resultEl.className = "mt-4 text-center text-base text-red-600";
+            } else {
+                resultEl.textContent = `✅ 回答正确！${quiz.tip}`;
+                resultEl.className = "mt-4 text-center text-base text-green-600";
+            }
+            
+            resultEl.classList.remove('hidden');
+            
+            // 显示下一题按钮（最后一题除外）
+            if (currentQuizIndex < quizBank.length - 1) {
+                setTimeout(() => {
+                    document.getElementById('quizNext').classList.remove('hidden');
+                }, 800);
+            } else {
+                resultEl.textContent = "🎉 所有问题回答正确！你已解锁柳浪闻莺全部小知识~";
+            }
+        }
+
+        function nextQuestion() {
+            currentQuizIndex++;
+            renderQuiz();
+        }
+        
+        // ========== 柳韵记忆翻牌游戏逻辑 ==========
+        // 初始化翻牌游戏
+        function initMemoryGame() {
+            // 重置游戏数据
+            memoryData = {
+                icons: ["fa-leaf", "fa-bird", "fa-tree", "fa-tint", "fa-sun-o"],
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                flipCount: 0,
+                isProcessing: false,
+                easyMode: memoryData.easyMode
+            };
+            
+            // 更新统计显示
+            document.getElementById('flipCount').textContent = '0';
+            document.getElementById('matchCount').textContent = '0';
+            
+            // 创建卡片数组（每个图标两份）
+            memoryData.cards = [...memoryData.icons, ...memoryData.icons];
+            
+            // 打乱卡片
+            shuffleCards();
+            
+            // 渲染游戏面板
+            renderMemoryBoard();
+            
+            // 隐藏成功弹窗
+            document.getElementById('memorySuccess').style.display = 'none';
+            document.getElementById('memoryOverlay').style.display = 'none';
+        }
+        
+        // 打乱卡片（Fisher-Yates 洗牌算法）
+        function shuffleCards() {
+            for (let i = memoryData.cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [memoryData.cards[i], memoryData.cards[j]] = [memoryData.cards[j], memoryData.cards[i]];
+            }
+        }
+        
+        // 渲染翻牌面板
+        function renderMemoryBoard() {
+            const board = document.getElementById('memoryBoard');
+            board.innerHTML = '';
+            
+            memoryData.cards.forEach((icon, index) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.index = index;
+                card.dataset.icon = icon;
+                
+                card.innerHTML = `
+                    <div class="memory-card-inner">
+                        <div class="memory-card-front">
+                            <i class="fa fa-pagelines"></i>
+                        </div>
+                        <div class="memory-card-back">
+                            <i class="fa ${icon} memory-card-icon"></i>
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定点击事件
+                card.addEventListener('click', () => flipCard(card));
+                
+                board.appendChild(card);
+            });
+        }
+        
+        // 翻牌逻辑
+        function flipCard(card) {
+            // 防止快速点击、已配对、已翻面的卡片被点击
+            if (memoryData.isProcessing || 
+                card.classList.contains('flipped') || 
+                card.classList.contains('matched')) {
+                return;
+            }
+            
+            // 翻转卡片
+            card.classList.add('flipped');
+            memoryData.flipCount++;
+            document.getElementById('flipCount').textContent = memoryData.flipCount;
+            
+            // 记录翻面的卡片
+            memoryData.flippedCards.push(card);
+            
+            // 如果翻了两张卡片，检查是否匹配
+            if (memoryData.flippedCards.length === 2) {
+                memoryData.isProcessing = true;
+                
+                const card1 = memoryData.flippedCards[0];
+                const card2 = memoryData.flippedCards[1];
+                
+                // 检查是否匹配
+                if (card1.dataset.icon === card2.dataset.icon) {
+                    // 匹配成功
+                    setTimeout(() => {
+                        card1.classList.add('matched');
+                        card2.classList.add('matched');
+                        memoryData.matchedPairs++;
+                        document.getElementById('matchCount').textContent = memoryData.matchedPairs;
+                        
+                        // 重置翻面数组
+                        memoryData.flippedCards = [];
+                        memoryData.isProcessing = false;
+                        
+                        // 检查游戏是否完成（改为5对）
+                        if (memoryData.matchedPairs === memoryData.icons.length) {
+                            setTimeout(() => {
+                                document.getElementById('finalFlipCount').textContent = memoryData.flipCount;
+                                document.getElementById('memorySuccess').style.display = 'block';
+                                document.getElementById('memoryOverlay').style.display = 'block';
+                            }, 500);
+                        }
+                    }, 600);
+                } else {
+                    // 匹配失败，翻回去
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        memoryData.flippedCards = [];
+                        memoryData.isProcessing = false;
+                    }, 1000);
+                }
+            }
+            
+            // 简单模式：显示所有卡片2秒
+            if (memoryData.easyMode && memoryData.flipCount === 1) {
+                const allCards = document.querySelectorAll('.memory-card');
+                allCards.forEach(c => c.classList.add('flipped'));
+                
+                setTimeout(() => {
+                    allCards.forEach(c => {
+                        if (!c.classList.contains('matched')) {
+                            c.classList.remove('flipped');
+                        }
+                    });
+                }, 2000);
+            }
+        }
+        
+        // 切换简单模式
+        function toggleEasyMode() {
+            memoryData.easyMode = !memoryData.easyMode;
+            const btn = document.getElementById('easyModeBtn');
+            
+            if (memoryData.easyMode) {
+                btn.innerHTML = '<i class="fa fa-star mr-1"></i> 简单模式(开启)';
+                btn.classList.add('bg-willow-deep');
+                alert('简单模式已开启！游戏开始时所有卡片会显示2秒');
+            } else {
+                btn.innerHTML = '<i class="fa fa-star mr-1"></i> 简单模式';
+                btn.classList.remove('bg-willow-deep');
+            }
+            
+            initMemoryGame();
+        }
+        
+        // 提示功能
+        function showHint() {
+            if (memoryData.isProcessing) return;
+            
+            // 找到一对未匹配的相同卡片并短暂显示
+            const unmatchedCards = document.querySelectorAll('.memory-card:not(.matched):not(.flipped)');
+            const iconMap = {};
+            
+            // 收集未匹配的卡片图标
+            unmatchedCards.forEach(card => {
+                const icon = card.dataset.icon;
+                if (!iconMap[icon]) {
+                    iconMap[icon] = [];
+                }
+                iconMap[icon].push(card);
+            });
+            
+            // 找到第一个有配对的图标
+            let hintCards = null;
+            for (const icon in iconMap) {
+                if (iconMap[icon].length >= 2) {
+                    hintCards = iconMap[icon];
+                    break;
+                }
+            }
+            
+            if (hintCards) {
+                // 短暂显示提示
+                hintCards[0].classList.add('flipped');
+                hintCards[1].classList.add('flipped');
+                
+                setTimeout(() => {
+                    if (!hintCards[0].classList.contains('matched')) {
+                        hintCards[0].classList.remove('flipped');
+                    }
+                    if (!hintCards[1].classList.contains('matched')) {
+                        hintCards[1].classList.remove('flipped');
+                    }
+                }, 1500);
+            } else {
+                alert('已经没有可提示的卡片啦！');
+            }
+        }
+        
+        // ========== 核心逻辑：界面切换 ==========
+        function backToMenu() {
+            // 隐藏所有游戏模块
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('quizModule').style.display = 'none';
+            document.getElementById('memoryModule').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
+            // 显示首页
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        // 页面加载完成绑定事件
+        window.onload = function() {
+            // 初始隐藏游戏容器
+            document.getElementById('gameContainer').style.display = 'none';
+            
+            // 打开知识问答
+            document.getElementById('quizBtn').addEventListener('click', () => {
+                document.getElementById('startScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                document.getElementById('quizModule').style.display = 'flex';
+                document.getElementById('memoryModule').style.display = 'none';
+                document.getElementById('backBtn').style.display = 'block';
+                initQuiz();
+            });
+
+            // 打开记忆翻牌游戏
+            document.getElementById('memoryBtn').addEventListener('click', () => {
+                document.getElementById('startScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                document.getElementById('quizModule').style.display = 'none';
+                document.getElementById('memoryModule').style.display = 'flex';
+                document.getElementById('backBtn').style.display = 'block';
+                initMemoryGame();
+            });
+
+            // 绑定返回按钮
+            document.getElementById('backBtn').addEventListener('click', backToMenu);
+            
+            // 绑定翻牌游戏按钮
+            document.getElementById('restartBtn').addEventListener('click', initMemoryGame);
+            document.getElementById('hintBtn').addEventListener('click', showHint);
+            document.getElementById('easyModeBtn').addEventListener('click', toggleEasyMode);
+        }
+    </script>
+</body>
+</html>

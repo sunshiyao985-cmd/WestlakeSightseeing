@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>南屏晚钟·钟韵寻踪</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        temple: '#8B2323',
+                        temple-light: '#CD5C5C',
+                        bell: '#C2B280',
+                        bell-deep: '#8B795E',
+                        ink: '#262626',
+                    },
+                    fontFamily: {
+                        kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+                        song: ['"SimSun"', '"STSong"', 'serif'],
+                    },
+                    keyframes: {
+                        fade-in: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        bell-swing: {
+                            '0%': { transform: 'rotate(-5deg)' },
+                            '50%': { transform: 'rotate(5deg)' },
+                            '100%': { transform: 'rotate(-5deg)' },
+                        },
+                        text-float: {
+                            '0%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                            '100%': { transform: 'translateY(0)' },
+                        },
+                    },
+                    animation: {
+                        'fade-in': 'fade-in 1s ease-out forwards',
+                        'bell-swing': 'bell-swing 2s ease-in-out infinite',
+                        'text-float': 'text-float 3s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* 国风边框 */
+            .chinese-border {
+                border: 2px solid #C2B280;
+                border-radius: 8px;
+                position: relative;
+            }
+            .chinese-border::before {
+                content: '';
+                position: absolute;
+                top: 6px;
+                left: 6px;
+                right: 6px;
+                bottom: 6px;
+                border: 1px dashed #8B2323;
+                border-radius: 4px;
+                pointer-events: none;
+            }
+
+            /* 首页背景（修正图片链接） */
+            .home-bg {
+                background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(0,0,0,0.3)), 
+                            url('https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/f7597af4bfa249b0b01f3be2355b9463.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=V6fJCXqy7sENe%2B2HGWn%2BNDuL32U%3D');
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+
+            /* 钟互动区域 */
+            .bell-container {
+                position: relative;
+                width: 100%;
+                max-width: 300px; /* 缩小钟容器适配移动端 */
+                margin: 0 auto;
+            }
+            .bell-img {
+                width: 100%;
+                animation: bell-swing 2s ease-in-out infinite;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .bell-img:hover {
+                transform: scale(1.02);
+            }
+            .bell-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #262626;
+                font-size: 14px;
+                background: rgba(255,255,255,0.8);
+                padding: 4px 8px;
+                border-radius: 4px;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+                pointer-events: none;
+            }
+            .bell-container:hover .bell-text {
+                opacity: 1;
+            }
+
+            /* 按钮样式 */
+            .temple-btn {
+                background: rgba(139, 35, 35, 0.8);
+                color: white;
+                border: 1px solid #C2B280;
+                border-radius: 8px;
+                padding: 8px 16px;
+                font-family: 'KaiTi', serif;
+                transition: all 0.3s ease;
+            }
+            .temple-btn:hover {
+                background: rgba(139, 35, 35, 1);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            }
+
+            /* 板块切换样式 */
+            .section-hidden {
+                display: none;
+            }
+            .text-shadow-md {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            }
+            /* 适配移动端的滚动容器 */
+            .scroll-container {
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
+                padding-right: 8px;
+            }
+            /* 自定义滚动条 */
+            .scroll-container::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb {
+                background-color: #8B2323;
+                border-radius: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="font-kai text-ink min-h-screen overflow-x-hidden">
+    <!-- 首页（直接分两个板块入口） -->
+    <div id="homeScreen" class="fixed inset-0 home-bg flex flex-col items-center justify-center p-4 z-50">
+        <div class="w-full max-w-lg text-center animate-fade-in mb-8">
+            <h1 class="text-[clamp(2.5rem,10vw,4rem)] font-bold text-white text-shadow-md animate-text-float leading-tight">
+                南屏晚钟
+            </h1>
+            <p class="text-[clamp(1.2rem,5vw,1.8rem)] text-white mt-6 mb-8">净慈寺·钟韵寻踪</p>
+            
+            <!-- 首页直接分两个板块入口 -->
+            <div class="flex flex-col md:flex-row gap-4 justify-center mb-8">
+                <button id="btnEnterSection1" class="temple-btn px-8 py-3 text-lg">
+                    <i class="fa fa-music mr-2"></i> 听钟声·辨知识
+                </button>
+                <button id="btnEnterSection2" class="temple-btn px-8 py-3 text-lg">
+                    <i class="fa fa-book mr-2"></i> 钟文谜·寻寺名
+                </button>
+            </div>
+        </div>
+        
+        <!-- 首页简介（精简，避免占空间） -->
+        <div class="absolute bottom-8 w-full max-w-lg chinese-border p-4 bg-white/70 rounded-lg animate-fade-in" style="animation-delay: 0.8s">
+            <h4 class="text-center font-bold text-temple mb-2 text-lg">南屏晚钟简介</h4>
+            <p class="text-sm leading-relaxed font-song text-center">
+                西湖十景之一，位于净慈寺内，古钟鸣响时钟声穿云渡湖，黄昏时分尤为悠远，
+                康熙南巡时题字“南屏晚钟”，成为西湖标志性景观。
+            </p>
+        </div>
+    </div>
+
+    <!-- 互动主界面 -->
+    <div id="interactScreen" class="fixed inset-0 bg-white/90 flex flex-col items-center justify-start p-4 pt-16 z-40 hidden">
+        <!-- 返回按钮 -->
+        <button id="backBtn" class="absolute top-4 left-4 temple-btn text-sm py-2 px-4 z-10">
+            <i class="fa fa-arrow-left mr-1"></i> 返回首页
+        </button>
+
+        <!-- 标题区域 -->
+        <div class="text-center mb-4 w-full">
+            <h2 class="text-[clamp(1.5rem,7vw,2.5rem)] font-bold text-temple">钟韵寻踪·互动环节</h2>
+            <div class="w-32 h-1 bg-bell-deep mx-auto mt-2 mb-4"></div>
+            
+            <!-- 板块切换按钮（保留，方便切换） -->
+            <div class="flex justify-center gap-3 mb-4 flex-wrap">
+                <button id="btnSwitchSection1" class="temple-btn px-4 py-2 text-sm active">
+                    <i class="fa fa-music mr-1"></i> 听钟声·辨知识
+                </button>
+                <button id="btnSwitchSection2" class="temple-btn px-4 py-2 text-sm">
+                    <i class="fa fa-book mr-1"></i> 钟文谜·寻寺名
+                </button>
+            </div>
+        </div>
+
+        <!-- 滚动容器（解决显示不全问题） -->
+        <div class="scroll-container w-full max-w-md">
+            <!-- 互动1：听钟声辨知识（补充更多题目和知识点） -->
+            <div id="section1" class="w-full chinese-border p-6 mb-6">
+                <h3 class="text-xl font-bold text-temple mb-4 text-center">
+                    听钟声·辨知识
+                </h3>
+                <p class="text-sm mb-6 text-center">南屏晚钟藏着诸多历史知识，点击钟体听钟声，答题涨知识~</p>
+                
+                <!-- 钟互动区域（修正图片链接，缩小适配） -->
+                <div class="bell-container mb-6">
+                    <img src="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/4536771a7c4546f595df0ae5c4dc4282.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=c61MnEd0YgmO7ladJG%2B%2BMbj2WT0%3D" 
+                        class="bell-img" id="interactBell" alt="南屏晚钟">
+                    <div class="bell-text" id="bellTip">点击钟体听钟声~</div>
+                </div>
+
+                <!-- 补充知识点卡片 -->
+                <div class="bg-temple/5 p-4 rounded-lg mb-6">
+                    <h4 class="font-bold text-temple mb-2 text-center">📖 南屏晚钟小知识</h4>
+                    <ul class="text-sm leading-relaxed font-song list-disc list-inside">
+                        <li>南屏晚钟的钟最初铸于南宋，后因战乱损毁，现钟为现代重铸</li>
+                        <li>净慈寺的钟声共有108响，寓意消除108种烦恼</li>
+                        <li>“南屏晚钟”四字为清康熙皇帝御笔题写</li>
+                        <li>钟声在黄昏时因空气湿度和风向，传播效果最佳</li>
+                    </ul>
+                </div>
+
+                <!-- 题目1：时段选择 -->
+                <div class="mb-6">
+                    <h4 class="font-bold mb-3 text-center">❓ 问题1：南屏晚钟的“晚”指哪个时段？</h4>
+                    <div class="space-y-3" id="timeOptions">
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="0">
+                            <span class="font-bold">选项1：</span>清晨（6:00）
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="1">
+                            <span class="font-bold">选项2：</span>黄昏（18:00）
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="2">
+                            <span class="font-bold">选项3：</span>深夜（23:00）
+                        </div>
+                    </div>
+                    <div id="timeResult" class="mt-4 text-center text-lg hidden"></div>
+                </div>
+
+                <!-- 题目2：补充新题目 -->
+                <div class="mb-6">
+                    <h4 class="font-bold mb-3 text-center">❓ 问题2：净慈寺钟声一共敲多少响？</h4>
+                    <div class="space-y-3" id="bellCountOptions">
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="0">
+                            <span class="font-bold">选项1：</span>88响
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="1">
+                            <span class="font-bold">选项2：</span>108响
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="2">
+                            <span class="font-bold">选项3：</span>120响
+                        </div>
+                    </div>
+                    <div id="bellCountResult" class="mt-4 text-center text-lg hidden"></div>
+                </div>
+
+                <!-- 题目3：补充新题目 -->
+                <div class="mb-4">
+                    <h4 class="font-bold mb-3 text-center">❓ 问题3：“南屏晚钟”四字是谁题写的？</h4>
+                    <div class="space-y-3" id="authorOptions">
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="0">
+                            <span class="font-bold">选项1：</span>康熙皇帝
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="1">
+                            <span class="font-bold">选项2：</span>乾隆皇帝
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="2">
+                            <span class="font-bold">选项3：</span>苏轼
+                        </div>
+                    </div>
+                    <div id="authorResult" class="mt-4 text-center text-lg hidden"></div>
+                </div>
+            </div>
+
+            <!-- 互动2：钟文解谜（补充更多内容） -->
+            <div id="section2" class="w-full chinese-border p-6 mb-6 section-hidden">
+                <h3 class="text-xl font-bold text-temple mb-4 text-center">
+                    钟文谜·寻寺名
+                </h3>
+                <p class="text-sm mb-6 text-center">古钟铭文藏着寺院的秘密，结合线索猜一猜，涨知识啦~</p>
+                
+                <!-- 知识点卡片 -->
+                <div class="bg-temple/5 p-4 rounded-lg mb-6">
+                    <h4 class="font-bold text-temple mb-2 text-center">📖 净慈寺小知识</h4>
+                    <ul class="text-sm leading-relaxed font-song list-disc list-inside">
+                        <li>净慈寺始建于五代十国时期，已有超千年历史</li>
+                        <li>净慈寺与雷峰塔隔湖相望，是西湖著名古刹</li>
+                        <li>“南屏晚钟”是净慈寺最具代表性的文化符号</li>
+                        <li>净慈寺的“净”取“清净慈悲”之意</li>
+                    </ul>
+                </div>
+
+                <!-- 谜题1：填字猜寺名 -->
+                <div class="mb-6">
+                    <h4 class="font-bold mb-3 text-center">❓ 谜题1：补全寺名（净□寺）</h4>
+                    <div class="text-center font-bold text-xl mb-4">提示：<span class="text-temple">“净□寺”</span></div>
+                    
+                    <!-- 答案填空区 -->
+                    <div class="flex justify-center gap-6 mb-4">
+                        <div class="w-12 h-12 border-2 border-bell-deep rounded flex items-center justify-center text-xl font-bold" id="char1">?</div>
+                    </div>
+
+                    <!-- 汉字选择区 -->
+                    <div class="grid grid-cols-4 gap-2 mb-4" id="charOptions">
+                        <div class="p-2 border border-gray-300 rounded cursor-pointer hover:bg-temple/5 transition text-lg" data-char="慈">慈</div>
+                        <div class="p-2 border border-gray-300 rounded cursor-pointer hover:bg-temple/5 transition text-lg" data-char="善">善</div>
+                        <div class="p-2 border border-gray-300 rounded cursor-pointer hover:bg-temple/5 transition text-lg" data-char="福">福</div>
+                        <div class="p-2 border border-gray-300 rounded cursor-pointer hover:bg-temple/5 transition text-lg" data-char="慧">慧</div>
+                    </div>
+                    <div id="charResult" class="mt-3 text-center text-lg hidden"></div>
+                </div>
+
+                <!-- 谜题2：补充新谜题 -->
+                <div class="mb-6">
+                    <h4 class="font-bold mb-3 text-center">❓ 谜题2：净慈寺始建于哪个朝代？</h4>
+                    <div class="space-y-3" id="dynastyOptions">
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="0">
+                            <span class="font-bold">选项1：</span>唐朝
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="1">
+                            <span class="font-bold">选项2：</span>五代十国
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="2">
+                            <span class="font-bold">选项3：</span>宋朝
+                        </div>
+                    </div>
+                    <div id="dynastyResult" class="mt-4 text-center text-lg hidden"></div>
+                </div>
+
+                <!-- 谜题3：补充新谜题 -->
+                <div class="mb-4">
+                    <h4 class="font-bold mb-3 text-center">❓ 谜题3：净慈寺与哪个建筑隔湖相望？</h4>
+                    <div class="space-y-3" id="buildingOptions">
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="0">
+                            <span class="font-bold">选项1：</span>雷峰塔
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="1">
+                            <span class="font-bold">选项2：</span>保俶塔
+                        </div>
+                        <div class="p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-temple/5 transition text-sm" data-answer="2">
+                            <span class="font-bold">选项3：</span>六和塔
+                        </div>
+                    </div>
+                    <div id="buildingResult" class="mt-4 text-center text-lg hidden"></div>
+                </div>
+            </div>
+
+            <!-- 风景图片链接区（修正照片顺序） -->
+            <div class="w-full mt-4 text-center mb-8">
+                <h3 class="text-xl font-bold text-temple mb-4">
+                    <i class="fa fa-picture-o mr-2"></i> 净慈寺风光
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 净慈寺红枫照片（修正顺序，先红枫） -->
+                    <a href="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/f7597af4bfa249b0b01f3be2355b9463.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=V6fJCXqy7sENe%2B2HGWn%2BNDuL32U%3D" target="_blank" class="block chinese-border p-2 hover:shadow-lg transition">
+                        <img src="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/f7597af4bfa249b0b01f3be2355b9463.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=V6fJCXqy7sENe%2B2HGWn%2BNDuL32U%3D" class="w-full rounded" alt="净慈寺红枫">
+                        <p class="mt-2 text-sm text-temple">净慈寺红枫</p>
+                    </a>
+                    <!-- 古钟照片（修正顺序，后古钟） -->
+                    <a href="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/4536771a7c4546f595df0ae5c4dc4282.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=c61MnEd0YgmO7ladJG%2B%2BMbj2WT0%3D" target="_blank" class="block chinese-border p-2 hover:shadow-lg transition">
+                        <img src="https://p3-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/4536771a7c4546f595df0ae5c4dc4282.jpg~tplv-a9rns2rl98-24:720:720.png?rcl=20260102153240338191F3BE5A2A94F4DD&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1767943960&x-signature=c61MnEd0YgmO7ladJG%2B%2BMbj2WT0%3D" class="w-full rounded" alt="净慈寺古钟">
+                        <p class="mt-2 text-sm text-temple">净慈寺古钟</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟钟声音频（使用免费公共音频链接）
+        const bellAudioUrl = "https://actions.google.com/sounds/v1/alarms/bell_ringing.ogg";
+        let currentAudio = null;
+
+        // 首页直接进入对应板块
+        document.getElementById('btnEnterSection1').addEventListener('click', () => {
+            document.getElementById('homeScreen').classList.add('hidden');
+            const interactScreen = document.getElementById('interactScreen');
+            interactScreen.classList.remove('hidden');
+            // 默认显示板块1
+            document.getElementById('section1').classList.remove('section-hidden');
+            document.getElementById('section2').classList.add('section-hidden');
+            document.getElementById('btnSwitchSection1').classList.add('bg-temple');
+            document.getElementById('btnSwitchSection2').classList.remove('bg-temple');
+        });
+
+        document.getElementById('btnEnterSection2').addEventListener('click', () => {
+            document.getElementById('homeScreen').classList.add('hidden');
+            const interactScreen = document.getElementById('interactScreen');
+            interactScreen.classList.remove('hidden');
+            // 默认显示板块2
+            document.getElementById('section1').classList.add('section-hidden');
+            document.getElementById('section2').classList.remove('section-hidden');
+            document.getElementById('btnSwitchSection1').classList.remove('bg-temple');
+            document.getElementById('btnSwitchSection2').classList.add('bg-temple');
+        });
+
+        // 返回首页
+        document.getElementById('backBtn').addEventListener('click', () => {
+            document.getElementById('interactScreen').classList.add('hidden');
+            document.getElementById('homeScreen').classList.remove('hidden');
+            resetInteract(); // 重置互动状态
+        });
+
+        // 板块切换逻辑
+        document.getElementById('btnSwitchSection1').addEventListener('click', () => {
+            document.getElementById('section1').classList.remove('section-hidden');
+            document.getElementById('section2').classList.add('section-hidden');
+            document.getElementById('btnSwitchSection1').classList.add('bg-temple');
+            document.getElementById('btnSwitchSection2').classList.remove('bg-temple');
+        });
+
+        document.getElementById('btnSwitchSection2').addEventListener('click', () => {
+            document.getElementById('section1').classList.add('section-hidden');
+            document.getElementById('section2').classList.remove('section-hidden');
+            document.getElementById('btnSwitchSection1').classList.remove('bg-temple');
+            document.getElementById('btnSwitchSection2').classList.add('bg-temple');
+        });
+
+        // 互动1：播放钟声
+        document.getElementById('interactBell').addEventListener('click', () => {
+            if (currentAudio) currentAudio.pause();
+            currentAudio = new Audio(bellAudioUrl);
+            currentAudio.play().catch(err => {
+                document.getElementById('bellTip').textContent = "浏览器限制自动播放，手动播放→" + bellAudioUrl;
+            });
+            document.getElementById('bellTip').textContent = "你听到了悠远的钟声~";
+        });
+
+        // 题目1：时段选择判断
+        document.querySelectorAll('#timeOptions > div').forEach(option => {
+            option.addEventListener('click', () => {
+                const answer = option.dataset.answer;
+                const resultEl = document.getElementById('timeResult');
+                resultEl.classList.remove('hidden');
+                if (answer === "1") {
+                    resultEl.className = "mt-4 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "✅ 答对啦！南屏晚钟因黄昏钟声最悠远得名~";
+                } else {
+                    resultEl.className = "mt-4 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 不对哦，南屏晚钟的“晚”指黄昏时分~";
+                }
+            });
+        });
+
+        // 题目2：钟声数量判断
+        document.querySelectorAll('#bellCountOptions > div').forEach(option => {
+            option.addEventListener('click', () => {
+                const answer = option.dataset.answer;
+                const resultEl = document.getElementById('bellCountResult');
+                resultEl.classList.remove('hidden');
+                if (answer === "1") {
+                    resultEl.className = "mt-4 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "✅ 答对啦！108响寓意消除108种烦恼~";
+                } else {
+                    resultEl.className = "mt-4 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 不对哦，正确答案是108响~";
+                }
+            });
+        });
+
+        // 题目3：题字作者判断
+        document.querySelectorAll('#authorOptions > div').forEach(option => {
+            option.addEventListener('click', () => {
+                const answer = option.dataset.answer;
+                const resultEl = document.getElementById('authorResult');
+                resultEl.classList.remove('hidden');
+                if (answer === "0") {
+                    resultEl.className = "mt-4 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "✅ 答对啦！“南屏晚钟”是康熙皇帝御笔~";
+                } else {
+                    resultEl.className = "mt-4 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 不对哦，正确答案是康熙皇帝~";
+                }
+            });
+        });
+
+        // 互动2：填字猜寺名
+        document.querySelectorAll('#charOptions > div').forEach(char => {
+            char.addEventListener('click', () => {
+                const selectedChar = char.dataset.char;
+                document.getElementById('char1').textContent = selectedChar;
+                const resultEl = document.getElementById('charResult');
+                resultEl.classList.remove('hidden');
+                
+                if (selectedChar === "慈") {
+                    resultEl.className = "mt-3 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "🎉 正确！南屏晚钟位于杭州净慈寺~";
+                } else {
+                    resultEl.className = "mt-3 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 再猜猜，提示：净□寺（西湖边的名寺）~";
+                }
+            });
+        });
+
+        // 谜题2：朝代判断
+        document.querySelectorAll('#dynastyOptions > div').forEach(option => {
+            option.addEventListener('click', () => {
+                const answer = option.dataset.answer;
+                const resultEl = document.getElementById('dynastyResult');
+                resultEl.classList.remove('hidden');
+                if (answer === "1") {
+                    resultEl.className = "mt-4 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "✅ 答对啦！净慈寺始建于五代十国时期~";
+                } else {
+                    resultEl.className = "mt-4 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 不对哦，正确答案是五代十国~";
+                }
+            });
+        });
+
+        // 谜题3：建筑判断
+        document.querySelectorAll('#buildingOptions > div').forEach(option => {
+            option.addEventListener('click', () => {
+                const answer = option.dataset.answer;
+                const resultEl = document.getElementById('buildingResult');
+                resultEl.classList.remove('hidden');
+                if (answer === "0") {
+                    resultEl.className = "mt-4 text-center text-green-600 font-bold text-lg";
+                    resultEl.textContent = "✅ 答对啦！净慈寺与雷峰塔隔湖相望~";
+                } else {
+                    resultEl.className = "mt-4 text-center text-red-600 text-lg";
+                    resultEl.textContent = "❌ 不对哦，正确答案是雷峰塔~";
+                }
+            });
+        });
+
+        // 重置互动状态
+        function resetInteract() {
+            // 重置板块1答题
+            document.getElementById('timeResult').classList.add('hidden');
+            document.getElementById('bellCountResult').classList.add('hidden');
+            document.getElementById('authorResult').classList.add('hidden');
+            // 重置板块2答题
+            document.getElementById('char1').textContent = "?";
+            document.getElementById('charResult').classList.add('hidden');
+            document.getElementById('dynastyResult').classList.add('hidden');
+            document.getElementById('buildingResult').classList.add('hidden');
+            // 重置钟声提示
+            document.getElementById('bellTip').textContent = "点击钟体听钟声~";
+            // 暂停音频
+            if (currentAudio) currentAudio.pause();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>苏堤春晓 - 拖拽拼图</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            jiangnan: {
+              green: '#82C3EC',
+              pink: '#FF9ED2',
+              blue: '#1890FF',
+              gray: '#E8F4F8',
+              dark: '#2A5768'
+            }
+          },
+          fontFamily: {
+            kai: ['KaiTi', 'STKaiti', 'serif'],
+            song: ['SimSun', 'STSong', 'serif']
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'scale-up': 'scaleUp 0.3s ease-out',
+            'success': 'successBounce 1s ease-in-out',
+            'shake': 'shake 0.3s ease-in-out',
+            'correct': 'correctPulse 0.5s ease-in-out',
+            'float': 'float 2s ease-in-out infinite',
+            'rotate-small': 'rotateSmall 0.5s ease-out',
+            'slide-in': 'slideIn 0.4s ease-out',
+            'zoom-in': 'zoomIn 0.3s ease-out',
+            'pulse-slow': 'pulseSlow 2s ease-in-out infinite',
+            'flip': 'flip 0.6s ease-out',
+            'confetti': 'confetti 3s ease-in-out',
+            'bg-shine': 'bgShine 2s ease-in-out infinite'
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' }
+            },
+            scaleUp: {
+              '0%': { transform: 'scale(0.9)' },
+              '100%': { transform: 'scale(1)' }
+            },
+            successBounce: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.05)' },
+              '75%': { transform: 'scale(0.98)' }
+            },
+            shake: {
+              '0%, 100%': { transform: 'translate(0)' },
+              '25%': { transform: 'translate(-5px, 0)' },
+              '75%': { transform: 'translate(5px, 0)' }
+            },
+            correctPulse: {
+              '0%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.05)', boxShadow: '0 0 15px rgba(130, 195, 236, 0.8)' },
+              '100%': { transform: 'scale(1)' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' }
+            },
+            rotateSmall: {
+              '0%': { transform: 'rotate(0deg)' },
+              '50%': { transform: 'rotate(3deg)' },
+              '100%': { transform: 'rotate(0deg)' }
+            },
+            slideIn: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' }
+            },
+            zoomIn: {
+              '0%': { transform: 'scale(0.8)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' }
+            },
+            pulseSlow: {
+              '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.03)' }
+            },
+            flip: {
+              '0%': { transform: 'rotateY(0deg)' },
+              '50%': { transform: 'rotateY(90deg)', opacity: '0.5' },
+              '100%': { transform: 'rotateY(0deg)', opacity: '1' }
+            },
+            confetti: {
+              '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
+              '100%': { transform: 'translateY(100px) rotate(720deg)', opacity: '0' }
+            },
+            bgShine: {
+              '0%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+              '100%': { backgroundPosition: '0% 50%' }
+            },
+            sakuraFall: {
+              '0%': {
+                transform: 'translateY(-20px) translateX(0) rotate(0deg)',
+                opacity: '1'
+              },
+              '25%': {
+                transform: 'translateY(25vh) translateX(-15px) rotate(90deg)',
+                opacity: '0.95'
+              },
+              '50%': {
+                transform: 'translateY(50vh) translateX(15px) rotate(180deg)',
+                opacity: '0.9'
+              },
+              '75%': {
+                transform: 'translateY(75vh) translateX(-10px) rotate(270deg)',
+                opacity: '0.85'
+              },
+              '100%': {
+                transform: 'translateY(100vh) translateX(10px) rotate(360deg)',
+                opacity: '0'
+              }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .puzzle-cell {
+        @apply relative border-2 border-jiangnan-gray/30 rounded-lg overflow-hidden flex items-center justify-center bg-white/80 transition-all duration-300 hover:border-jiangnan-green/50;
+      }
+      .puzzle-cell.filled {
+        @apply border-jiangnan-green/80 bg-white;
+      }
+      .puzzle-cell.incorrect {
+        @apply border-red-400 animate-shake;
+      }
+      .puzzle-cell.correct {
+        @apply border-jiangnan-green/80 animate-correct;
+      }
+      .source-img {
+        @apply rounded-lg shadow-md cursor-grab transition-all duration-300 hover:shadow-lg hover:scale-[1.02] select-none animate-float;
+      }
+      .source-img.dragging {
+        @apply opacity-70 cursor-grabbing scale-[0.98];
+      }
+      .puzzle-img {
+        @apply rounded-lg shadow-md cursor-grab transition-all duration-300 hover:shadow-lg hover:scale-[1.02] select-none w-full h-full;
+      }
+      .game-container {
+        @apply mx-auto rounded-2xl overflow-hidden bg-jiangnan-gray/50 shadow-xl p-4;
+      }
+      .btn-jiangnan {
+        @apply px-6 py-3 rounded-lg font-kai text-lg transition-all hover:shadow-lg active:scale-95;
+      }
+      .heading-shine {
+        background: linear-gradient(90deg, #1890FF, #FF9ED2, #82C3EC);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: bgShine 2s ease-in-out infinite;
+      }
+      .sakura {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        border-radius: 50% 0;
+        opacity: 0.9;
+        top: -20px;
+        animation: sakuraFall 4s ease-in-out forwards;
+      }
+    }
+    
+    body {
+      background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/5b60f4e72517446492499245c3b12a4c.jpg~tplv-a9rns2rl98-image.png?rcl=20260103193043FCAC08120A5ED6D631E5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083663844&x-signature=OogDHTS2yQCjq%2FcgYZWUG5jXhfU%3D');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-blend-mode: overlay;
+      background-color: rgba(255, 255, 255, 0.85);
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    
+    [draggable="true"] {
+      user-select: none;
+      -webkit-user-drag: element;
+    }
+    
+    .drop-zone-highlight {
+      border-color: #82C3EC !important;
+      background-color: rgba(130, 195, 236, 0.1) !important;
+    }
+    
+    .puzzle-cell img {
+      z-index: 10;
+      position: relative;
+    }
+    
+    .placeholder {
+      z-index: 1;
+      position: absolute;
+    }
+    
+    #confetti-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+    
+    #sakura-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-song text-jiangnan-dark">
+  <div id="sakura-container"></div>
+  
+  <header class="py-6 px-4 bg-white/80 backdrop-blur-sm shadow-md mb-8 relative z-10">
+    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+      <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-kai font-bold mb-4 md:mb-0 heading-shine">
+        <i class="fa fa-pagelines text-jiangnan-pink mr-3"></i>苏堤春晓 · 拖拽拼图
+      </h1>
+      <div class="flex flex-wrap gap-3 items-center">
+        <button id="restart-btn" class="btn-jiangnan bg-jiangnan-blue text-white">
+          <i class="fa fa-refresh mr-2"></i>重新开始
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 pb-16 relative z-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-6xl mx-auto">
+      <div class="bg-white/90 rounded-xl p-4 shadow-md animate-fade-in">
+        <h3 class="font-kai text-lg mb-1 flex items-center">
+          <i class="fa fa-check-circle text-jiangnan-green mr-2"></i>已完成
+        </h3>
+        <p id="completed-count" class="text-xl font-bold">0/9</p>
+      </div>
+      <div class="bg-white/90 rounded-xl p-4 shadow-md animate-fade-in">
+        <button id="hint-btn" class="w-full btn-jiangnan bg-jiangnan-pink text-white">
+          <i class="fa fa-lightbulb-o mr-2"></i>提示 (3次)
+        </button>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+      <div class="lg:col-span-1 bg-white/90 rounded-2xl p-4 shadow-xl animate-fade-in">
+        <h2 class="font-kai text-xl mb-4 text-center text-jiangnan-dark">
+          <i class="fa fa-th-large mr-2 text-jiangnan-pink"></i>素材区
+        </h2>
+        <div id="source-images" class="grid grid-cols-3 gap-3"></div>
+        <p class="text-sm text-gray-500 mt-4 text-center">
+          点击并拖动图片到右侧拼图区，可自由调整位置
+        </p>
+      </div>
+      
+      <div class="lg:col-span-3 animate-fade-in">
+        <div class="game-container">
+          <h2 class="font-kai text-xl mb-4 text-center text-jiangnan-dark">
+            <i class="fa fa-puzzle-piece mr-2 text-jiangnan-green"></i>拼图区 (3×3)
+          </h2>
+          <div id="puzzle-grid" class="grid grid-cols-3 gap-2 aspect-square max-w-xl mx-auto"></div>
+        </div>
+        
+        <div id="success-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 animate-scale-up relative">
+            <div id="confetti-container" class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden"></div>
+            
+            <div class="text-center relative z-20">
+              <div class="w-20 h-20 rounded-full bg-jiangnan-green/20 flex items-center justify-center mx-auto mb-6">
+                <i class="fa fa-trophy text-4xl text-jiangnan-green animate-success"></i>
+              </div>
+              <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-kai font-bold text-jiangnan-blue mb-2">恭喜完成！</h2>
+              <p class="text-jiangnan-dark/80 mb-4">你完美拼好了苏堤春晓九景图</p>
+              
+              <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="play-again-btn" class="btn-jiangnan bg-jiangnan-blue text-white">
+                  <i class="fa fa-play mr-2"></i>再玩一次
+                </button>
+                <button id="complete-game-btn" class="btn-jiangnan bg-jiangnan-pink text-white">
+                  <i class="fa fa-check mr-2"></i>完成并解锁景点
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-8 bg-white/90 rounded-xl p-4 max-w-5xl mx-auto animate-fade-in">
+      <h3 class="font-kai text-lg mb-2 flex items-center">
+        <i class="fa fa-book text-jiangnan-green mr-2"></i>苏堤小知识
+      </h3>
+      <p class="text-jiangnan-dark/80">苏堤春晓是西湖十景之首，由北宋苏轼主持修建，全长2.8公里，贯穿西湖南北，六座石拱桥（映波、锁澜、望山、压堤、东浦、跨虹）错落其间，春日桃花柳叶相映，美不胜收。</p>
+    </div>
+  </main>
+
+  <footer class="bg-jiangnan-dark/90 text-white py-6 px-4 relative z-10">
+    <div class="container mx-auto text-center font-kai">
+      <p>苏堤春晓 · 拖拽拼图 &copy; 2025</p>
+      <p class="text-white/70 text-sm mt-1">春风又绿江南岸，明月何时照我还</p>
+    </div>
+  </footer>
+
+  <script>
+    // 9张苏堤春晓图片
+    const PUZZLE_IMAGES = [
+      { id: 0, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ad6eb2b8173443bab4e4cd002da56af4.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=tV0eXD4toHGpHESLexRDKPFwBJU%3D" },
+      { id: 1, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/e908ae0f75c34485ab16074d2ace2187.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=5kJXkIj7%2Bt4NXo8tyfLBjg6BqOA%3D" },
+      { id: 2, url: "https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2a64fde7337d4e5e89fba4f6a98cd11c.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=oyL91DyC9DGB3YEHaSfSzfXQFEU%3D" },
+      { id: 3, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/305fe67a82a34c5cb5b67adaeb38ffba.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=ByyY8BHTboU9Gc%2F%2FdVB4%2BfffTAI%3D" },
+      { id: 4, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/cf8c45094c144b89963914591775f6d5.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=xTgfR%2BNaRZ3YgMlSbyf6gQtRS44%3D" },
+      { id: 5, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/9560831e52494bcfaa2cc2f29b4e08be.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=n77SFD0yQ5t%2FTWVArcI1GD%2BvxwI%3D" },
+      { id: 6, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/58547b87b476431b8b7f20545f1acf9d.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=BEMatbIdqAkdJooC8gidKdbpQKs%3D" },
+      { id: 7, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/6cbeafe82cca481fa52a1b23b812b9b5.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=m8nkln1kNznS459Th13oyOQHvbw%3D" },
+      { id: 8, url: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/3e9e1aa8b27c49b29d64287e7198aade.jpg~tplv-a9rns2rl98-image.png?rcl=202512151626237E15CE151FE38A49E656&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082011183&x-signature=1VjM7%2FZaqEukSTgth5IgWBCtfJk%3D" }
+    ];
+
+    // 游戏状态管理
+    const gameState = {
+      correctPositions: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      puzzleGrid: Array(9).fill(null),
+      completedCount: 0,
+      hintCount: 3,
+      isCompleted: false,
+      shuffledImages: [],
+      draggedItem: null,
+      draggedFrom: null,
+      sakuraInterval: null,
+    };
+
+    const elements = {
+      sourceImagesContainer: document.getElementById('source-images'),
+      puzzleGridContainer: document.getElementById('puzzle-grid'),
+      completedCountEl: document.getElementById('completed-count'),
+      hintBtn: document.getElementById('hint-btn'),
+      restartBtn: document.getElementById('restart-btn'),
+      successModal: document.getElementById('success-modal'),
+      playAgainBtn: document.getElementById('play-again-btn'),
+      completeGameBtn: document.getElementById('complete-game-btn'),
+      confettiContainer: document.getElementById('confetti-container'),
+      sakuraContainer: document.getElementById('sakura-container'),
+    };
+
+    // 初始化游戏
+    function initGame() {
+      gameState.puzzleGrid = Array(9).fill(null);
+      gameState.completedCount = 0;
+      gameState.hintCount = 3;
+      gameState.isCompleted = false;
+      gameState.draggedItem = null;
+      gameState.draggedFrom = null;
+      
+      if (gameState.sakuraInterval) {
+        clearInterval(gameState.sakuraInterval);
+        gameState.sakuraInterval = null;
+      }
+      
+      if (elements.sakuraContainer) {
+        elements.sakuraContainer.innerHTML = '';
+      }
+      
+      gameState.shuffledImages = [...PUZZLE_IMAGES].sort(() => Math.random() - 0.5);
+      
+      elements.sourceImagesContainer.innerHTML = '';
+      elements.puzzleGridContainer.innerHTML = '';
+      if (elements.confettiContainer) elements.confettiContainer.innerHTML = '';
+      
+      elements.successModal.classList.add('hidden');
+      
+      generateSourceImages();
+      generatePuzzleGrid();
+      updateCompletedCount();
+      updateHintButton();
+    }
+
+    // 生成素材区图片
+    function generateSourceImages() {
+      gameState.shuffledImages.forEach(img => {
+        const imgElement = createDraggableImageElement(img, 'source');
+        elements.sourceImagesContainer.appendChild(imgElement);
+      });
+    }
+
+    // 创建可拖拽的图片元素
+    function createDraggableImageElement(imgInfo, type) {
+      const container = document.createElement('div');
+      container.className = type === 'source' ? 'source-img' : 'puzzle-img';
+      container.dataset.imgId = imgInfo.id;
+      container.dataset.type = type;
+      container.draggable = true;
+      container.style.width = '100%';
+      container.style.height = '100%';
+      
+      const img = document.createElement('img');
+      img.src = imgInfo.url;
+      img.alt = `苏堤春晓${imgInfo.id+1}`;
+      img.className = 'w-full h-full object-cover rounded-lg aspect-square';
+      img.draggable = false;
+      
+      container.innerHTML = '';
+      container.appendChild(img);
+      
+      container.addEventListener('dragstart', handleDragStart);
+      container.addEventListener('dragend', handleDragEnd);
+      
+      return container;
+    }
+
+    // 生成拼图网格
+    function generatePuzzleGrid() {
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'puzzle-cell';
+        cell.dataset.gridIndex = i;
+        cell.style.minHeight = '100px';
+        
+        cell.innerHTML = `
+          <div class="placeholder text-gray-400 text-sm">
+            <i class="fa fa-image block mb-1"></i>
+            拖拽图片到这里
+          </div>
+        `;
+        
+        cell.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        cell.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          cell.classList.add('drop-zone-highlight');
+        });
+        cell.addEventListener('dragleave', () => {
+          cell.classList.remove('drop-zone-highlight');
+        });
+        cell.addEventListener('drop', handleDrop);
+        
+        elements.puzzleGridContainer.appendChild(cell);
+      }
+    }
+
+    // 拖拽开始
+    function handleDragStart(e) {
+      e.stopPropagation();
+      const dragContainer = e.target.closest('[draggable="true"]');
+      if (!dragContainer) return;
+      
+      gameState.draggedItem = dragContainer;
+      gameState.draggedFrom = dragContainer.dataset.type;
+      
+      dragContainer.classList.add('dragging');
+      dragContainer.style.opacity = '0.5';
+      
+      const imgId = dragContainer.dataset.imgId;
+      e.dataTransfer.setData('text', imgId);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(dragContainer, 20, 20);
+    }
+
+    // 拖拽结束
+    function handleDragEnd(e) {
+      e.stopPropagation();
+      const dragContainer = e.target.closest('[draggable="true"]');
+      if (dragContainer) {
+        dragContainer.classList.remove('dragging');
+        dragContainer.style.opacity = '1';
+      }
+      
+      document.querySelectorAll('.puzzle-cell').forEach(cell => {
+        cell.classList.remove('drop-zone-highlight');
+      });
+      
+      gameState.draggedItem = null;
+      gameState.draggedFrom = null;
+    }
+
+    // 放置图片
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const cell = e.target.closest('.puzzle-cell');
+      if (!cell) return;
+      const gridIndex = parseInt(cell.dataset.gridIndex);
+      
+      const imgIdStr = e.dataTransfer.getData('text') || e.dataTransfer.getData('text/plain');
+      const imgId = parseInt(imgIdStr);
+      if (isNaN(imgId)) return;
+      
+      cell.classList.remove('drop-zone-highlight');
+      
+      const imgInfo = PUZZLE_IMAGES.find(img => img.id === imgId);
+      if (!imgInfo) return;
+      
+      if (gameState.draggedFrom === 'source') {
+        placeImageInPuzzleCell(cell, gridIndex, imgInfo);
+      } else if (gameState.draggedFrom === 'puzzle') {
+        moveImageBetweenPuzzleCells(cell, gridIndex, imgInfo);
+      }
+      
+      checkGameCompletion();
+    }
+
+    // 将图片放置到拼图单元格
+    function placeImageInPuzzleCell(cell, gridIndex, imgInfo) {
+      try {
+        if (gameState.puzzleGrid[gridIndex] !== null) {
+          const existingImgId = gameState.puzzleGrid[gridIndex];
+          returnImageToSource(existingImgId);
+        }
+        
+        cell.innerHTML = '';
+        removeSourceImage(imgInfo.id);
+        
+        const puzzleImg = createDraggableImageElement(imgInfo, 'puzzle');
+        puzzleImg.classList.add('animate-slide-in');
+        cell.appendChild(puzzleImg);
+        
+        cell.classList.add('filled');
+        gameState.puzzleGrid[gridIndex] = imgInfo.id;
+        
+        checkPuzzleCellAccuracy(cell, gridIndex, imgInfo.id);
+        cell.offsetHeight;
+        
+        updateCompletedCount();
+        
+      } catch (error) {
+        console.error('放置图片失败:', error);
+      }
+    }
+
+    // 在拼图单元格之间移动图片
+    function moveImageBetweenPuzzleCells(targetCell, targetIndex, imgInfo) {
+      try {
+        const sourceIndex = gameState.puzzleGrid.findIndex(id => id === imgInfo.id);
+        if (sourceIndex === -1 || sourceIndex === targetIndex) return;
+        
+        const sourceCell = document.querySelectorAll('.puzzle-cell')[sourceIndex];
+        if (!sourceCell) return;
+        
+        const targetImgId = gameState.puzzleGrid[targetIndex];
+        
+        sourceCell.innerHTML = `
+          <div class="placeholder text-gray-400 text-sm">
+            <i class="fa fa-image block mb-1"></i>
+            拖拽图片到这里
+          </div>
+        `;
+        sourceCell.classList.remove('filled', 'correct', 'incorrect');
+        gameState.puzzleGrid[sourceIndex] = null;
+        
+        if (targetImgId !== null) {
+          const targetImgInfo = PUZZLE_IMAGES.find(img => img.id === targetImgId);
+          if (targetImgInfo) {
+            sourceCell.innerHTML = '';
+            const sourceImg = createDraggableImageElement(targetImgInfo, 'puzzle');
+            sourceImg.classList.add('animate-slide-in');
+            sourceCell.appendChild(sourceImg);
+            sourceCell.classList.add('filled');
+            gameState.puzzleGrid[sourceIndex] = targetImgId;
+            checkPuzzleCellAccuracy(sourceCell, sourceIndex, targetImgId);
+          }
+        }
+        
+        targetCell.innerHTML = '';
+        const targetImg = createDraggableImageElement(imgInfo, 'puzzle');
+        targetImg.classList.add('animate-slide-in');
+        targetCell.appendChild(targetImg);
+        targetCell.classList.add('filled');
+        gameState.puzzleGrid[targetIndex] = imgInfo.id;
+        checkPuzzleCellAccuracy(targetCell, targetIndex, imgInfo.id);
+        
+        sourceCell.offsetHeight;
+        targetCell.offsetHeight;
+        updateCompletedCount();
+        
+      } catch (error) {
+        console.error('移动图片失败:', error);
+      }
+    }
+
+    // 检查拼图单元格放置是否正确
+    function checkPuzzleCellAccuracy(cell, gridIndex, imgId) {
+      cell.classList.remove('correct', 'incorrect', 'animate-zoom-in', 'animate-rotate-small', 'animate-flip');
+      
+      if (imgId === gameState.correctPositions[gridIndex]) {
+        cell.classList.add('correct', 'animate-zoom-in', 'animate-rotate-small');
+      } else {
+        cell.classList.add('incorrect', 'animate-flip');
+        setTimeout(() => {
+          cell.classList.remove('incorrect', 'animate-flip');
+        }, 600);
+      }
+    }
+
+    // 移除素材区的图片
+    function removeSourceImage(imgId) {
+      const sourceImages = document.querySelectorAll('.source-img');
+      sourceImages.forEach(img => {
+        if (parseInt(img.dataset.imgId) === imgId) {
+          img.remove();
+        }
+      });
+    }
+
+    // 将图片放回素材区
+    function returnImageToSource(imgId) {
+      const imgInfo = PUZZLE_IMAGES.find(img => img.id === imgId);
+      if (!imgInfo) return;
+      
+      const existing = Array.from(document.querySelectorAll('.source-img')).find(
+        el => parseInt(el.dataset.imgId) === imgId
+      );
+      if (existing) return;
+      
+      const imgElement = createDraggableImageElement(imgInfo, 'source');
+      elements.sourceImagesContainer.appendChild(imgElement);
+    }
+
+    // 更新完成数量显示
+    function updateCompletedCount() {
+      gameState.completedCount = gameState.puzzleGrid.reduce((count, imgId, index) => {
+        return imgId === gameState.correctPositions[index] ? count + 1 : count;
+      }, 0);
+      
+      elements.completedCountEl.textContent = `${gameState.completedCount}/9`;
+    }
+
+    // 更新提示按钮状态
+    function updateHintButton() {
+      elements.hintBtn.innerHTML = `
+        <i class="fa fa-lightbulb-o mr-2"></i>提示 (${gameState.hintCount}次)
+      `;
+      
+      if (gameState.hintCount <= 0 || gameState.isCompleted) {
+        elements.hintBtn.disabled = true;
+        elements.hintBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        elements.hintBtn.disabled = false;
+        elements.hintBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 生成庆祝彩带
+    function createConfetti() {
+      const container = document.getElementById('confetti-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        const colors = ['#82C3EC', '#FF9ED2', '#1890FF', '#E8F4F8', '#2A5768'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = Math.random() * 10 + 5 + 'px';
+        
+        confetti.style.cssText = `
+          position: absolute;
+          width: ${size};
+          height: ${size};
+          background: ${color};
+          top: -20px;
+          left: ${Math.random() * 100}%;
+          border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+          animation: confetti 3s ease-in-out ${Math.random() * 2}s forwards;
+          transform: rotate(${Math.random() * 360}deg);
+        `;
+        
+        container.appendChild(confetti);
+      }
+    }
+
+    // 创建单朵樱花
+    function createSakura() {
+      if (!elements.sakuraContainer) return;
+      
+      const colors = [
+        'rgba(255, 158, 210, 0.9)',
+        'rgba(255, 182, 193, 0.95)',
+        'rgba(240, 128, 128, 0.9)',
+        'rgba(255, 105, 180, 0.85)'
+      ];
+      
+      const sakura = document.createElement('div');
+      sakura.className = 'sakura';
+      
+      const size = Math.random() * 20 + 15;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const left = Math.random() * 100;
+      const fallDuration = Math.random() * 2 + 3;
+      const rotate = Math.random() * 360;
+      
+      sakura.style.width = `${size}px`;
+      sakura.style.height = `${size}px`;
+      sakura.style.background = color;
+      sakura.style.left = `${left}%`;
+      sakura.style.top = '-20px';
+      sakura.style.transform = `rotate(${rotate}deg)`;
+      sakura.style.animationDuration = `${fallDuration}s`;
+      sakura.style.animationDelay = `${Math.random() * 1}s`;
+      
+      elements.sakuraContainer.appendChild(sakura);
+      
+      setTimeout(() => {
+        try {
+          sakura.remove();
+        } catch (e) {}
+      }, (fallDuration + 1) * 1000);
+    }
+
+    // 启动樱花飘落特效
+    function startSakuraEffect() {
+      if (elements.sakuraContainer) {
+        elements.sakuraContainer.innerHTML = '';
+      }
+      
+      for (let i = 0; i < 80; i++) {
+        setTimeout(() => {
+          createSakura();
+        }, i * 50);
+      }
+      
+      gameState.sakuraInterval = setInterval(() => {
+        createSakura();
+      }, 100);
+      
+      setTimeout(() => {
+        if (gameState.sakuraInterval) {
+          clearInterval(gameState.sakuraInterval);
+          gameState.sakuraInterval = null;
+        }
+      }, 20000);
+    }
+
+    // 检查游戏是否完成
+    function checkGameCompletion() {
+      if (gameState.completedCount === 9 && !gameState.isCompleted) {
+        gameState.isCompleted = true;
+        setTimeout(() => {
+          elements.successModal.classList.remove('hidden');
+          createConfetti();
+          startSakuraEffect();
+        }, 500);
+      }
+    }
+
+    // 提示功能
+    function showHint() {
+      if (gameState.hintCount <= 0 || gameState.isCompleted) return;
+      
+      const emptyIndex = gameState.puzzleGrid.findIndex((val, index) => {
+        return val !== gameState.correctPositions[index];
+      });
+      
+      if (emptyIndex !== -1) {
+        const correctImgId = gameState.correctPositions[emptyIndex];
+        const puzzleCells = document.querySelectorAll('.puzzle-cell');
+        const targetCell = puzzleCells[emptyIndex];
+        targetCell.classList.add('ring-4', 'ring-jiangnan-pink', 'animate-pulse-slow');
+        
+        let targetImg = null;
+        const sourceImages = document.querySelectorAll('.source-img');
+        sourceImages.forEach(img => {
+          if (parseInt(img.dataset.imgId) === correctImgId) {
+            targetImg = img;
+          }
+        });
+        
+        if (!targetImg) {
+          const puzzleImages = document.querySelectorAll('.puzzle-img');
+          puzzleImages.forEach(img => {
+            if (parseInt(img.dataset.imgId) === correctImgId) {
+              targetImg = img;
+            }
+          });
+        }
+        
+        if (targetImg) {
+          targetImg.classList.add('ring-4', 'ring-jiangnan-green', 'animate-pulse-slow');
+          setTimeout(() => {
+            targetImg.classList.remove('ring-4', 'ring-jiangnan-green', 'animate-pulse-slow');
+          }, 3000);
+        }
+        
+        setTimeout(() => {
+          targetCell.classList.remove('ring-4', 'ring-jiangnan-pink', 'animate-pulse-slow');
+        }, 3000);
+        
+        gameState.hintCount--;
+        updateHintButton();
+      }
+    }
+
+    // 完成游戏并通知主应用
+    function completeAndNotify() {
+      if (gameState.isCompleted) {
+        // 通知主应用游戏完成
+        if (window.parent) {
+          window.parent.postMessage({
+            type: 'GAME_COMPLETE',
+            gameId: 'sudichunxiao'
+          }, '*');
+          
+          // 也可以调用主应用的函数
+          try {
+            if (window.parent.completeGame) {
+              window.parent.completeGame('sudichunxiao');
+            }
+          } catch (e) {
+            console.log('通知主应用完成游戏');
+          }
+        }
+        
+        alert('恭喜！您已成功解锁苏堤春晓景点！');
+        
+        // 自动关闭游戏页面
+        setTimeout(() => {
+          if (window.parent && window.parent.closeGame) {
+            window.parent.closeGame('sudichunxiao');
+          }
+        }, 1500);
+      } else {
+        alert('请先完成拼图游戏！');
+      }
+    }
+
+    // 绑定事件监听
+    function bindEvents() {
+      elements.restartBtn.addEventListener('click', initGame);
+      elements.hintBtn.addEventListener('click', showHint);
+      elements.playAgainBtn.addEventListener('click', initGame);
+      elements.completeGameBtn.addEventListener('click', completeAndNotify);
+      
+      elements.sourceImagesContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      
+      elements.sourceImagesContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const imgIdStr = e.dataTransfer.getData('text') || e.dataTransfer.getData('text/plain');
+        const imgId = parseInt(imgIdStr);
+        if (!isNaN(imgId) && gameState.draggedFrom === 'puzzle') {
+          const sourceIndex = gameState.puzzleGrid.findIndex(id => id === imgId);
+          if (sourceIndex !== -1) {
+            const sourceCell = document.querySelectorAll('.puzzle-cell')[sourceIndex];
+            sourceCell.innerHTML = `
+              <div class="placeholder text-gray-400 text-sm">
+                <i class="fa fa-image block mb-1"></i>
+                拖拽图片到这里
+              </div>
+            `;
+            sourceCell.classList.remove('filled', 'correct', 'incorrect');
+            gameState.puzzleGrid[sourceIndex] = null;
+            returnImageToSource(imgId);
+            updateCompletedCount();
+          }
+        }
+      });
+    }
+
+    // 页面加载完成初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      bindEvents();
+      initGame();
+    });
+  </script>
+</body>
+</html>

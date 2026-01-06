@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>雷峰夕照·国风科普小游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 基于夕照实景提取的国风配色
+                        ink: '#1a1a18',          // 墨黑
+                        paper: '#f8f4e8',        // 宣纸白
+                        sunset: '#e88a4a',       // 夕照橙
+                        sunset-deep: '#c86a32',  // 落日红
+                        tower: '#8c6a48',        // 古塔棕
+                        mist: '#e6d8c8',         // 薄雾灰
+                    },
+                    fontFamily: {
+                        kai: ['"KaiTi"', '"STKaiti"', 'serif'],
+                        song: ['"SimSun"', '"STSong"', 'serif'],
+                        maobi: ['"Ma Shan Zheng"', 'cursive'], // 毛笔字体
+                    },
+                    keyframes: {
+                        // 全新光影动画
+                        sunset-ripple: {
+                            '0%': { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.6 },
+                            '50%': { transform: 'translate(-50%, -50%) scale(1.2)', opacity: 0.8 },
+                            '100%': { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.6 },
+                        },
+                        cloud-float: {
+                            '0%': { transform: 'translateX(0)' },
+                            '50%': { transform: 'translateX(-20px)' },
+                            '100%': { transform: 'translateX(0)' },
+                        },
+                        tower-shadow: {
+                            '0%': { boxShadow: '0 0 30px rgba(232,138,74,0.2)' },
+                            '50%': { boxShadow: '0 0 50px rgba(232,138,74,0.4)' },
+                            '100%': { boxShadow: '0 0 30px rgba(232,138,74,0.2)' },
+                        },
+                        fade-in: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    },
+                    animation: {
+                        'sunset-ripple': 'sunset-ripple 8s ease-in-out infinite',
+                        'cloud-float': 'cloud-float 15s ease-in-out infinite',
+                        'tower-shadow': 'tower-shadow 6s ease-in-out infinite',
+                        'fade-in': 'fade-in 1s ease-out forwards',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* 国风基础样式 */
+            .ink-border {
+                border: 1px solid #1a1a18;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+            .chinese-border {
+                border: 1px solid #8c6a48;
+                border-radius: 4px;
+                position: relative;
+            }
+            .chinese-border::before {
+                content: '';
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                border: 1px dashed #e88a4a;
+                border-radius: 2px;
+                pointer-events: none;
+            }
+            
+            /* 首页艺术化核心样式 - 移动端适配 */
+            .home-container {
+                background: linear-gradient(to bottom, rgba(248,244,232,0.1), rgba(248,244,232,0.8)), 
+                            url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/cdce38fa24d04598a15a171be4643f91.jpg~tplv-a9rns2rl98-image.png?rcl=202512230918108C15464316B5CE0069CB&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082676690&x-signature=tvn%2BUUiYEjHLw%2FR8xnjUxN5r1qM%3D');
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+            .sunset-light {
+                position: absolute;
+                top: 25%;
+                right: 20%;
+                width: 280px;
+                height: 280px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(232,138,74,0.4) 0%, rgba(232,138,74,0) 70%);
+                transform: translate(-50%, -50%);
+                animation: sunset-ripple 8s ease-in-out infinite;
+                z-index: 1;
+                filter: blur(15px);
+            }
+            .menu-card {
+                background: rgba(248,244,232,0.85);
+                backdrop-filter: blur(8px);
+                transition: all 0.4s ease;
+                border: 1px solid rgba(140,106,72,0.3);
+                border-radius: 12px;
+                overflow: hidden;
+                position: relative;
+            }
+            .menu-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                transition: left 0.8s ease;
+            }
+            .menu-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 12px 24px rgba(140,106,72,0.2);
+            }
+            .menu-card:hover::before {
+                left: 100%;
+            }
+            
+            /* 夕照互动模块样式 - 移动端适配 */
+            .sunset-container {
+                position: relative;
+                width: 100%;
+                height: 100vh;
+                overflow: hidden;
+            }
+            .sunset-bg {
+                position: absolute;
+                inset: 0;
+                background: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/951f7f841b5f43e882cf25ad1508450e.jpg~tplv-a9rns2rl98-image.png?rcl=202512230918108C15464316B5CE0069CB&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082676690&x-signature=vsjd1ukmKgctE8eQYpf1cdotIX8%3D');
+                background-size: cover;
+                background-position: center;
+                transition: all 2s ease;
+            }
+            .sunset-overlay {
+                position: absolute;
+                inset: 0;
+                transition: all 2s ease;
+                z-index: 2;
+            }
+            .control-panel {
+                position: absolute;
+                top: auto;
+                bottom: 30px;
+                right: 50%;
+                transform: translateX(50%);
+                z-index: 10;
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 90%;
+                max-width: 400px;
+            }
+            .time-btn {
+                background: rgba(248,244,232,0.9);
+                border: 1px solid #8c6a48;
+                border-radius: 10px;
+                padding: 10px 12px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                font-family: 'KaiTi', 'STKaiti', serif;
+                font-size: 14px;
+                color: #1a1a18;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                text-align: center;
+                flex: 1;
+                min-width: 110px;
+            }
+            .time-btn:hover {
+                transform: scale(1.05);
+                background: rgba(248,244,232,1);
+                box-shadow: 0 6px 12px rgba(140,106,72,0.2);
+            }
+            .time-btn.active {
+                background: #e88a4a;
+                color: white;
+                border-color: #c86a32;
+            }
+            
+            /* 知识问答模块样式 - 移动端适配 */
+            .quiz-container {
+                background: linear-gradient(to bottom, rgba(248,244,232,0.2), rgba(248,244,232,0.9)), 
+                            url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/7938a7d4cbcf43c2ab2595273cdc2935.jpg~tplv-a9rns2rl98-image.png?rcl=202512230918108C15464316B5CE0069CB&rk3s=8e244e95&rrcfp=dafada99&x-expires=2082676690&x-signature=JtO5%2Ba7DmVgK2mEMyHE9uU%2BA0Zk%3D');
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+                padding: 20px 0;
+            }
+            .quiz-card {
+                background: rgba(248,244,232,0.95);
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                border: 1px solid #8c6a48;
+                position: relative;
+                overflow: hidden;
+                width: 90%;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            .quiz-option {
+                transition: all 0.3s ease;
+                border: 1px solid #d8c8b8;
+                border-radius: 8px;
+            }
+            .quiz-option:hover {
+                background: rgba(232,138,74,0.1);
+                border-color: #e88a4a;
+                transform: translateX(4px);
+            }
+            .quiz-option.correct {
+                background: rgba(72,187,120,0.2);
+                border-color: #48bb78;
+            }
+            .quiz-option.wrong {
+                background: rgba(220,38,38,0.2);
+                border-color: #dc2626;
+            }
+            
+            /* 通用国风装饰 - 移动端适配 */
+            .chinese-divider {
+                height: 2px;
+                background: linear-gradient(90deg, transparent, #8c6a48, transparent);
+                width: 70%;
+                margin: 0 auto;
+                position: relative;
+            }
+            .chinese-divider::after {
+                content: '';
+            }
+            .back-btn {
+                background: rgba(248,244,232,0.9);
+                border: 1px solid #8c6a48;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            .back-btn:hover {
+                background: rgba(248,244,232,1);
+                transform: scale(1.05);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+            .progress-container {
+                position: absolute;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 85%;
+                max-width: 400px;
+                z-index: 10;
+            }
+            .time-progress {
+                height: 8px;
+                background: rgba(248,244,232,0.3);
+                border-radius: 4px;
+                overflow: hidden;
+                border: 1px solid #8c6a48;
+            }
+            .progress-bar {
+                height: 100%;
+                background: linear-gradient(90deg, #e88a4a, #c86a32);
+                width: 0%;
+                transition: width 2s ease;
+                border-radius: 3px;
+            }
+            /* 下一题按钮样式优化 - 移动端适配 */
+            .next-btn {
+                background: #f8f4e8;
+                border: 1px solid #1a1a18;
+                color: #1a1a18 !important;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-family: 'KaiTi', 'STKaiti', serif;
+                font-size: 15px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                width: 80%;
+                max-width: 200px;
+            }
+            .next-btn:hover {
+                background: #f0e8d8;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+        }
+    </style>
+</head>
+<body class="bg-paper font-kai text-ink min-h-screen overflow-x-hidden">
+    <!-- 首页 - 仅移除标题，保留所有原有排版 -->
+    <div id="startScreen" class="fixed inset-0 home-container flex flex-col items-center justify-start p-4 pt-10 pb-16 z-50">
+        <!-- 动态夕照光影 - 保留原有样式 -->
+        <div class="sunset-light"></div>
+        
+        <!-- 功能按钮区 - 保留所有原有样式和排版 -->
+        <div class="w-full max-w-md flex flex-col gap-8 relative z-10 mb-16 px-4">
+            <!-- 知识问答卡片 -->
+            <div id="quizBtn" class="menu-card py-10 px-6 cursor-pointer animate-fade-in" style="animation-delay: 0.5s">
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fa fa-book text-[clamp(2rem,7vw,3rem)] text-tower"></i>
+                    <div>
+                        <h3 class="text-[clamp(1.2rem,5vw,1.5rem)] font-bold text-ink">雷峰塔知识问答</h3>
+                        <p class="text-sm text-gray-600 mt-1">解锁古塔千年故事</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 夕照体验卡片 -->
+            <div id="sunsetBtn" class="menu-card py-10 px-6 cursor-pointer animate-fade-in" style="animation-delay: 0.8s">
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fa fa-sun-o text-[clamp(2rem,7vw,3rem)] text-sunset"></i>
+                    <div>
+                        <h3 class="text-[clamp(1.2rem,5vw,1.5rem)] font-bold text-ink">夕照时辰体验</h3>
+                        <p class="text-sm text-gray-600 mt-1">感受从黄昏到暮色的光影变幻</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部简介 - 保留所有原有样式 -->
+        <div class="absolute bottom-6 w-full max-w-lg chinese-border p-4 bg-paper/70 rounded-lg relative z-10 animate-fade-in px-4" style="animation-delay: 1.1s">
+            <h4 class="text-center font-bold text-sunset-deep mb-3 text-base">景点简介</h4>
+            <p class="text-[clamp(0.8rem,3vw,0.9rem)] leading-relaxed font-song text-ink text-center">
+                雷峰夕照是西湖十景之一，位于西湖南岸夕照山的雷峰上。每当夕阳西下，
+                晚霞映照雷峰塔，塔影横斜，金碧耀目，形成“雷峰夕照”的绝美景观。
+            </p>
+        </div>
+    </div>
+
+    <!-- 游戏主容器 - 完全保留原有代码 -->
+    <div id="gameContainer" class="hidden w-full h-screen">
+        <!-- 返回按钮 - 保留原有样式 -->
+        <button id="backBtn" class="back-btn absolute top-4 left-4 px-4 py-2 z-20 text-ink hover:bg-gray-100/80 text-sm">
+            <i class="fa fa-arrow-left mr-1"></i> 返回首页
+        </button>
+
+        <!-- 1. 知识问答模块 - 完全保留 -->
+        <div id="quizModule" class="hidden quiz-container w-full h-full flex items-center justify-center p-4">
+            <div class="quiz-card p-6 w-full max-w-md relative">
+                <h2 class="text-[clamp(1.2rem,4vw,1.8rem)] text-center text-tower mb-6 font-bold">
+                    「雷峰知多少」
+                </h2>
+                <div class="chinese-divider mb-8"></div>
+                
+                <div id="quizQuestion" class="mb-8 text-[clamp(0.9rem,3vw,1.1rem)] leading-relaxed font-song text-ink text-center">
+                    1. 雷峰夕照是“西湖十景”中的第几个景？
+                </div>
+                
+                <div id="quizOptions" class="space-y-4 mb-8">
+                    <!-- 选项会动态生成 -->
+                </div>
+                
+                <div id="quizResult" class="mt-4 text-center text-base hidden"></div>
+                
+                <div id="quizNext" class="mt-8 text-center hidden">
+                    <!-- 移动端下一题按钮 -->
+                    <button onclick="nextQuestion()" class="next-btn">
+                        下一题 <i class="fa fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 夕照时辰体验模块 - 完全保留 -->
+        <div id="sunsetModule" class="hidden sunset-container">
+            <!-- 背景层 -->
+            <div id="sunsetBg" class="sunset-bg"></div>
+            
+            <!-- 光影叠加层 -->
+            <div id="sunsetOverlay" class="sunset-overlay"></div>
+            
+            <!-- 控制按钮面板 - 保留原有布局 -->
+            <div class="control-panel">
+                <button class="time-btn active" onclick="setSunsetTime('early')">
+                    <i class="fa fa-sun-o mr-1"></i> 黄昏
+                </button>
+                <button class="time-btn" onclick="setSunsetTime('golden')">
+                    <i class="fa fa-star mr-1"></i> 黄金时刻
+                </button>
+                <button class="time-btn" onclick="setSunsetTime('dusk')">
+                    <i class="fa fa-moon-o mr-1"></i> 暮色
+                </button>
+            </div>
+            
+            <!-- 进度条 - 保留原有样式 -->
+            <div class="progress-container">
+                <div class="time-progress">
+                    <div id="timeProgressBar" class="progress-bar"></div>
+                </div>
+                <div class="flex justify-between text-xs text-white/90 mt-2">
+                    <span>17:00</span>
+                    <span>17:30</span>
+                    <span>18:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 雷峰塔问答题库 - 完全保留
+        const quizBank = [
+            {
+                question: "1. 雷峰夕照是“西湖十景”中的第几个景？",
+                options: ["① 第七个", "② 第八个", "③ 第九个"],
+                correct: 1,
+                tip: "雷峰夕照是西湖十景之八哦~"
+            },
+            {
+                question: "2. 现雷峰塔重建完成的年份是？",
+                options: ["① 1999年", "② 2002年", "③ 2005年"],
+                correct: 1,
+                tip: "现雷峰塔于2002年10月25日重建开放~"
+            },
+            {
+                question: "3. 雷峰塔位于西湖的哪个方位？",
+                options: ["① 西湖南岸", "② 西湖北岸", "③ 西湖东岸"],
+                correct: 0,
+                tip: "雷峰塔坐落在西湖南岸的夕照山雷峰上~"
+            },
+            {
+                question: "4. 雷峰塔最初修建于哪个朝代？",
+                options: ["① 唐代", "② 宋代", "③ 明代"],
+                correct: 1,
+                tip: "雷峰塔始建于北宋太平兴国二年（977年）~"
+            },
+            {
+                question: "5. 现雷峰塔共有几层？",
+                options: ["① 3层", "② 5层", "③ 7层"],
+                correct: 1,
+                tip: "现雷峰塔为五层八面的楼阁式塔~"
+            }
+        ];
+        
+        // 全局变量 - 完全保留
+        let currentQuizIndex = 0;
+        let sunsetType = 'early';
+
+        // ========== 知识问答逻辑 ==========
+        function initQuiz() {
+            currentQuizIndex = 0;
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            const quiz = quizBank[currentQuizIndex];
+            document.getElementById('quizQuestion').textContent = quiz.question;
+            
+            const optionsEl = document.getElementById('quizOptions');
+            optionsEl.innerHTML = '';
+            
+            quiz.options.forEach((option, idx) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'quiz-option p-4 cursor-pointer text-center text-sm';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => checkAnswer(idx);
+                optionsEl.appendChild(optionDiv);
+            });
+            
+            document.getElementById('quizResult').classList.add('hidden');
+            document.getElementById('quizNext').classList.add('hidden');
+        }
+
+        function checkAnswer(choice) {
+            const quiz = quizBank[currentQuizIndex];
+            const resultEl = document.getElementById('quizResult');
+            const options = document.querySelectorAll('.quiz-option');
+            
+            // 标记答案状态
+            options.forEach((el, idx) => {
+                el.style.pointerEvents = 'none';
+                if (idx === quiz.correct) {
+                    el.classList.add('correct');
+                } else if (idx === choice && idx !== quiz.correct) {
+                    el.classList.add('wrong');
+                }
+            });
+            
+            // 显示结果
+            if (choice !== quiz.correct) {
+                resultEl.textContent = `❌ 回答错误~ ${quiz.tip}`;
+                resultEl.className = "mt-4 text-center text-base text-red-600";
+            } else {
+                resultEl.textContent = `✅ 回答正确！${quiz.tip}`;
+                resultEl.className = "mt-4 text-center text-base text-green-600";
+            }
+            
+            resultEl.classList.remove('hidden');
+            
+            // 显示下一题按钮（最后一题除外）
+            if (currentQuizIndex < quizBank.length - 1) {
+                setTimeout(() => {
+                    document.getElementById('quizNext').classList.remove('hidden');
+                }, 800);
+            } else {
+                resultEl.textContent = "🎉 所有问题回答正确！你已解锁雷峰塔全部小知识~";
+            }
+        }
+
+        function nextQuestion() {
+            currentQuizIndex++;
+            renderQuiz();
+        }
+
+        // ========== 夕照时辰体验逻辑 ==========
+        function initSunset() {
+            setSunsetTime('early');
+        }
+
+        function setSunsetTime(type) {
+            sunsetType = type;
+            const bgEl = document.getElementById('sunsetBg');
+            const overlayEl = document.getElementById('sunsetOverlay');
+            const progressBar = document.getElementById('timeProgressBar');
+            const timeBtns = document.querySelectorAll('.time-btn');
+            
+            // 更新按钮状态
+            timeBtns.forEach(btn => btn.classList.remove('active'));
+            // 修复event.target可能为空的问题
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                timeBtns.forEach((btn, idx) => {
+                    if ((type === 'early' && idx === 0) || (type === 'golden' && idx === 1) || (type === 'dusk' && idx === 2)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            // 不同时辰的光影效果
+            switch(type) {
+                case 'early': // 黄昏 - 明亮通透
+                    bgEl.style.filter = 'brightness(1) contrast(1) saturate(1.1)';
+                    overlayEl.style.background = 'linear-gradient(to bottom, rgba(232,138,74,0.05), rgba(0,0,0,0.1))';
+                    progressBar.style.width = '0%';
+                    break;
+                    
+                case 'golden': // 黄金时刻 - 暖色调增强
+                    bgEl.style.filter = 'brightness(1.1) contrast(1.05) saturate(1.3) sepia(0.1)';
+                    overlayEl.style.background = 'linear-gradient(to bottom, rgba(232,138,74,0.15), rgba(0,0,0,0.2))';
+                    progressBar.style.width = '50%';
+                    break;
+                    
+                case 'dusk': // 暮色 - 暗调+蓝紫色调
+                    bgEl.style.filter = 'brightness(0.85) contrast(1.1) saturate(1.2) sepia(0.2) hue-rotate(-10deg)';
+                    overlayEl.style.background = 'linear-gradient(to bottom, rgba(140,106,72,0.2), rgba(0,0,0,0.4))';
+                    progressBar.style.width = '100%';
+                    break;
+            }
+        }
+
+        // ========== 界面切换逻辑 ==========
+        function backToMenu() {
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('quizModule').classList.add('hidden');
+            document.getElementById('sunsetModule').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            
+            // 重置按钮状态
+            const timeBtns = document.querySelectorAll('.time-btn');
+            timeBtns.forEach((btn, idx) => {
+                btn.classList.remove('active');
+                if (idx === 0) btn.classList.add('active');
+            });
+        }
+
+        // 页面加载完成绑定事件 - 完全保留
+        window.onload = function() {
+            // 打开知识问答
+            document.getElementById('quizBtn').addEventListener('click', () => {
+                document.getElementById('startScreen').classList.add('hidden');
+                document.getElementById('gameContainer').classList.remove('hidden');
+                document.getElementById('quizModule').classList.remove('hidden');
+                initQuiz();
+            });
+
+            // 打开夕照时辰体验
+            document.getElementById('sunsetBtn').addEventListener('click', () => {
+                document.getElementById('startScreen').classList.add('hidden');
+                document.getElementById('gameContainer').classList.remove('hidden');
+                document.getElementById('sunsetModule').classList.remove('hidden');
+                initSunset();
+            });
+
+            // 绑定返回按钮
+            document.getElementById('backBtn').addEventListener('click', backToMenu);
+        }
+    </script>
+</body>
+</html>

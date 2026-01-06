@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三潭印月 · 西湖十景</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        /* 自定义动画 */
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-float { animation: float 5s infinite ease-in-out; }
+        .animate-fadeIn { animation: fadeIn 1s ease forwards; }
+        .text-shadow { text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .bg-water { background: linear-gradient(to bottom, #e0f7fa 0%, #b2ebf2 100%); }
+        .tower-img:hover { filter: brightness(1.05); cursor: pointer; }
+        
+        /* 核心：分层布局，石塔层置顶 */
+        .tower-container {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10; /* 确保石塔在背景上方 */
+        }
+        /* 小石塔样式，统一控制尺寸和布局 */
+        .small-tower {
+            max-width: 15%; /* 小石塔尺寸，远小于原石塔 */
+            max-height: 40%;
+            object-fit: contain;
+            z-index: 10;
+            animation: float 6s infinite ease-in-out; /* 独立动画时长，更自然 */
+        }
+        /* 图片加载失败时显示备用样式，方便排查 */
+        img {
+            display: block; /* 解决间隙问题 */
+        }
+
+        /* ########## 优化后：左右排列画卷核心样式 ########## */
+        /* 外层容器：优化左右布局协调性 */
+        .scroll-left-right-container {
+            max-width: 7xl; /* 适当加宽外层容器，避免画卷拥挤 */
+            margin: 0 auto;
+            display: flex;
+            justify-content: center; /* 居中对齐，比两端对齐更美观 */
+            align-items: flex-start; /* 顶部对齐，视觉更整洁 */
+            gap: 6rem; /* 增大间距，避免视觉拥挤（比4rem更舒适） */
+            padding: 0 4px;
+            flex-wrap: wrap; /* 移动端换行适配 */
+        }
+        /* 单个画卷容器：统一尺寸，增加悬浮效果 */
+        .single-scroll-container {
+            flex: 0 0 40%; /* 固定宽度占比，确保左右画卷大小完全一致 */
+            min-width: 300px; /* 增大最小宽度，避免移动端挤压 */
+            max-width: 2xl;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s ease-in-out; /* 悬浮缩放动画 */
+        }
+        /* 画卷悬浮轻微放大，增加交互质感 */
+        .single-scroll-container:hover {
+            transform: scale(1.02);
+        }
+        /* 单个画卷背景：强化仿古质感 */
+        .single-scroll-bg {
+            background: url('https://img.58pic.com/58pic/17/08/26/58PIC1708264c3809787_1024.jpg') no-repeat center;
+            background-size: cover;
+            border: 3px solid #7a3e1b; /* 加深边框颜色，更贴近古木卷轴 */
+            border-radius: 6px; /* 轻微圆角，更柔和（避免直角生硬） */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.1); /* 双层阴影，增加立体感 */
+            padding: 2.5rem; /* 增大内边距，让诗词内容不拥挤 */
+            position: relative;
+            width: 0;
+            height: auto;
+            transition: width 2.2s ease-in-out; /* 稍微放慢展开速度，更优雅 */
+            margin: 0 auto;
+            background-color: rgba(250, 245, 230, 0.9); /* 叠加米黄色背景，提升文字可读性 */
+        }
+        /* 画卷展开状态 */
+        .single-scroll-bg.active {
+            width: 100%;
+        }
+        /* 单个画卷轴：优化细节，更逼真 */
+        .single-scroll-axis {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 18px; /* 加宽卷轴，更醒目 */
+            background: linear-gradient(to top, #5a3016, #8B4513, #5a3016); /* 渐变效果，更贴近真实木轴 */
+            border-radius: 3px; /* 卷轴圆角，更自然 */
+            z-index: 2;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.3); /* 内阴影，增加立体感 */
+        }
+        .single-scroll-axis.left {
+            left: 0;
+        }
+        .single-scroll-axis.right {
+            right: 0;
+        }
+        /* 诗词内容：优化文字样式，提升美观度 */
+        .poem-content {
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out 0.6s; /* 延迟显示，配合画卷展开节奏 */
+            color: #2d2d2d; /* 深灰色文字，比纯黑更柔和，更护眼 */
+            text-align: center; /* 文字居中，更整洁 */
+            font-family: "楷体", "宋体", serif; /* 使用书法字体，贴合古风 */
+        }
+        .single-scroll-bg.active .poem-content {
+            opacity: 1;
+        }
+        /* 诗词标题：强化样式 */
+        .poem-content h3 {
+            color: #6b2f08; /* 棕红色标题，贴合古画风格 */
+            margin-bottom: 1rem;
+            font-size: 1.5rem; /* 增大标题字体 */
+            border-bottom: 2px solid #d4b894; /* 底部边框，分隔标题和内容 */
+            padding-bottom: 0.5rem;
+            display: inline-block; /* 让边框宽度适配标题 */
+        }
+        /* 诗词作者：优化样式 */
+        .poem-content p:nth-child(2) {
+            color: #8a5a38;
+            margin-bottom: 1.2rem;
+            font-style: italic;
+            font-size: 1rem;
+        }
+        /* 诗词正文：优化行高，提升可读性 */
+        .poem-content p:last-child {
+            line-height: 2; /* 增大行高，避免文字拥挤 */
+            font-size: 1.1rem;
+            white-space: pre-line; /* 保留换行，让诗词排版更美观 */
+        }
+    </style>
+</head>
+<body class="bg-water min-h-screen overflow-x-hidden">
+    <!-- 顶部标题区：使用你提供的湖景图URL -->
+    <header class="relative h-96 flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img 
+                src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/e856876aaa734c119d7a8169eb4cc16b.jpg~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=ceny2UY%2FLpmoB%2BZju6m2ChXYulg%3D" 
+                alt="三潭印月全景" 
+                class="w-full h-full object-cover opacity-80"
+                onerror="this.src='https://img.58pic.com/58pic/23/23/84/58PIC23238498b8409787_1024.jpg'; this.onerror=null;"
+            >
+            <div class="absolute inset-0 bg-black/30"></div>
+        </div>
+        <div class="relative z-10 text-center text-white animate-fadeIn">
+            <h1 class="text-5xl md:text-7xl font-serif font-bold text-shadow mb-4">三潭印月</h1>
+            <p class="text-xl md:text-2xl italic text-shadow">“一湖金水欲溶秋，三塔分占一月印”</p>
+        </div>
+    </header>
+
+    <!-- 石塔核心展示区：背景用湖景图，中层用原石塔+新增小石塔 -->
+    <section class="relative py-16 px-4 md:px-0">
+        <div class="max-w-6xl mx-auto text-center mb-12">
+            <h2 class="text-3xl font-serif text-gray-800 mb-4">石塔·映月奇观</h2>
+            <p class="text-gray-600 max-w-3xl mx-auto">
+                三潭印月的三座石塔，始建于北宋苏轼疏浚西湖时的“界塔”，现存为明代重建。塔高2.5米，球形塔身开5孔，中秋夜塔内点烛、蒙薄纸，烛光透孔如“月”，与月影交织出“33个月亮”的奇景。
+            </p>
+        </div>
+
+        <!-- 石塔展示容器 - 分层布局（新增小石塔，调整原石塔尺寸） -->
+        <div class="relative max-w-4xl mx-auto h-96 md:h-[500px] rounded-2xl overflow-hidden border-2 border-blue-400">
+            <!-- 1. 湖水背景层（最底层：使用你提供的湖景图URL） -->
+            <img 
+                src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/e856876aaa734c119d7a8169eb4cc16b.jpg~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=ceny2UY%2FLpmoB%2BZju6m2ChXYulg%3D"
+                alt="西湖湖景背景" 
+                class="absolute inset-0 w-full h-full object-cover z-1"
+                onerror="this.src='https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a330315982394c8ebb06915cf1f80ec8.jpg~tplv-a9rns2rl98-image.png'; this.onerror=null;"
+            >
+            
+            <!-- 2. 石塔层（中层置顶：原石塔缩小尺寸 + 新增多个小石塔，布局在湖面上） -->
+            <div class="tower-container">
+                <!-- 原石塔：缩小尺寸（使用你提供的石塔图片URL） -->
+                <img 
+                    src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b2490862d0e44479e899e9eddcf3bdb.png~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=OdicpTT3Zoe%2BJKl2wDv%2Fbabc%2BVs%3D"
+                    alt="三潭印月主石塔" 
+                    class="tower-img animate-float"
+                    style="max-width: 25%; max-height: 60%; object-fit: contain; z-index: 10;"
+                    onerror="this.src='https://img.baidu.com/it/u=123456789,0&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500'; this.onerror=null;"
+                >
+
+                <!-- 新增小石塔1：左侧湖面上 -->
+                <img 
+                    src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b2490862d0e44479e899e9eddcf3bdb.png~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=OdicpTT3Zoe%2BJKl2wDv%2Fbabc%2BVs%3D"
+                    alt="三潭印月小石塔1" 
+                    class="small-tower absolute left-20 top-1/3"
+                    onerror="this.src='https://img.baidu.com/it/u=123456789,0&fm=253&fmt=auto&app=138&f=JPEG?w=300&h=300'; this.onerror=null;"
+                >
+
+                <!-- 新增小石塔2：右侧湖面上 -->
+                <img 
+                    src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b2490862d0e44479e899e9eddcf3bdb.png~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=OdicpTT3Zoe%2BJKl2wDv%2Fbabc%2BVs%3D"
+                    alt="三潭印月小石塔2" 
+                    class="small-tower absolute right-20 top-1/2"
+                    onerror="this.src='https://img.baidu.com/it/u=123456789,0&fm=253&fmt=auto&app=138&f=JPEG?w=300&h=300'; this.onerror=null;"
+                >
+
+                <!-- 新增小石塔3：左下方湖面上 -->
+                <img 
+                    src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b2490862d0e44479e899e9eddcf3bdb.png~tplv-a9rns2rl98-image.png?rcl=20260105145819748E81E15CD0AF0384C3&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820300&x-signature=OdicpTT3Zoe%2BJKl2wDv%2Fbabc%2BVs%3D"
+                    alt="三潭印月小石塔3" 
+                    class="small-tower absolute left-1/4 bottom-20"
+                    onerror="this.src='https://img.baidu.com/it/u=123456789,0&fm=253&fmt=auto&app=138&f=JPEG?w=300&h=300'; this.onerror=null;"
+                >
+            </div>
+            
+            <!-- 3. 月亮效果层（最顶层） -->
+            <div id="moonEffect" class="absolute w-12 h-12 rounded-full bg-yellow-200 shadow-lg opacity-0 transition-opacity duration-500 z-20"></div>
+        </div>
+    </section>
+
+    <!-- 文化诗词区：优化后左右排列画卷 -->
+    <section class="py-16 px-4 bg-white">
+        <div class="max-w-6xl mx-auto text-center mb-12">
+            <h2 class="text-3xl font-serif text-gray-800 text-shadow-sm">诗画·三潭</h2>
+        </div>
+
+        <!-- ########## 外层容器：优化后左右排列 ########## -->
+        <div class="scroll-left-right-container mx-auto">
+            <!-- 左侧画卷：第一首诗词 -->
+            <div class="single-scroll-container">
+                <div class="single-scroll-bg" id="scroll1">
+                    <div class="single-scroll-axis left"></div>
+                    <div class="single-scroll-axis right"></div>
+                    <div class="poem-content">
+                        <h3>《湖山十景·三潭印月》</h3>
+                        <p>宋·王洧</p>
+                        <p>塔边分占宿湖船，宝鉴开匳水接天。
+横玉叫云何处起，波心惊觉老龙眠。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧画卷：第二首诗词 -->
+            <div class="single-scroll-container">
+                <div class="single-scroll-bg" id="scroll2">
+                    <div class="single-scroll-axis left"></div>
+                    <div class="single-scroll-axis right"></div>
+                    <div class="poem-content">
+                        <h3>《三潭印月》</h3>
+                        <p>元·尹廷高</p>
+                        <p>坡仙立塔据平湖，天影清涵水墨图。
+夜静老龙鳞甲冷，冰壶倒浸玉浮图。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 底部信息区 -->
+    <footer class="py-8 bg-gray-800 text-white text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <p class="mb-2">三潭印月 · 西湖十景之一 | 全国重点文物保护单位</p>
+            <p class="text-gray-400 text-sm">© 2025 西湖文化景观 · 以诗画绘西湖</p>
+        </div>
+    </footer>
+
+    <!-- 交互脚本 -->
+    <script>
+        // 点击石塔显示月亮效果（兼容原石塔和小石塔）
+        const towerImgs = document.querySelectorAll('.tower-img, .small-tower');
+        const moonEffect = document.getElementById('moonEffect');
+        
+        // 容错处理：防止图片加载失败导致脚本报错
+        if (towerImgs.length > 0 && moonEffect) {
+            towerImgs.forEach(towerImg => {
+                towerImg.addEventListener('click', (e) => {
+                    const containerRect = e.target.closest('.max-w-4xl').getBoundingClientRect();
+                    moonEffect.style.left = `${e.clientX - containerRect.left - 24}px`;
+                    moonEffect.style.top = `${e.clientY - containerRect.top - 24}px`;
+                    moonEffect.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        moonEffect.style.opacity = '0';
+                    }, 1500);
+                });
+            });
+        }
+
+        // ########## 左右画卷展开逻辑 ##########
+        window.addEventListener('load', () => {
+            const scroll1 = document.getElementById('scroll1'); // 左侧画卷
+            const scroll2 = document.getElementById('scroll2'); // 右侧画卷
+
+            // 左侧先展开，右侧后展开，保持层次感
+            setTimeout(() => {
+                scroll1.classList.add('active');
+            }, 500);
+
+            setTimeout(() => {
+                scroll2.classList.add('active');
+            }, 1500);
+
+            // 若想左右画卷同时展开，注释上面两行，启用下面一行
+            // setTimeout(() => { scroll1.classList.add('active'); scroll2.classList.add('active'); }, 500);
+        });
+    </script>
+</body>
+</html>

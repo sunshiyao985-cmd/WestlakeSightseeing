@@ -1,0 +1,360 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平湖秋月 - 荷灯小游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        /* 全局样式：使用CDN背景图 */
+        body {
+            background-image: url("https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/061a282e2c1145b3877907516fd05e20.jpg~tplv-a9rns2rl98-image.png?rcl=20260105144715E8BB8F1A084464F3B81D&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083819635&x-signature=2WtZ%2BDxURqGooFmbh6yyfvXho64%3D");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
+            background-size: cover;
+            color: #e6f1ff;
+            font-family: "Microsoft Yahei", "SimHei", "Songti SC", sans-serif;
+            margin: 0;
+            padding: 20px 0;
+            scroll-behavior: smooth;
+            min-height: 100vh;
+            position: relative; /* 为月亮绝对定位做准备 */
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+        }
+        .page-title {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #f0e68c;
+            margin: 30px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            letter-spacing: 2px;
+        }
+        /* 游戏容器：完全透明 */
+        #game-container {
+            position: relative;
+            width: 98%;
+            height: 700px;
+            margin: 0 auto;
+            background: transparent;
+        }
+        /* 荷灯样式 */
+        .lotus-lamp {
+            position: absolute;
+            cursor: default;
+            z-index: 10;
+            transition: all 0.2s ease;
+            animation: floatLamp 8s ease-in-out infinite alternate;
+            display: block !important;
+        }
+        .lamp-common {
+            width: 45px;
+            height: auto;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+        }
+        .lamp-rare {
+            width: 55px;
+            height: auto;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1));
+            animation: floatLamp 6s ease-in-out infinite alternate, glow 2s ease-in-out infinite alternate;
+        }
+        .lamp-epic {
+            width: 60px;
+            height: auto;
+            filter: drop-shadow(0 0 15px rgba(255, 99, 71, 1));
+            animation: floatLamp 5s ease-in-out infinite alternate, glow 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes floatLamp {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-30px) rotate(5deg); }
+        }
+        @keyframes glow {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        /* 荷灯寄月按钮 */
+        #start-btn {
+            position: absolute;
+            top: calc(138px + 20px);
+            left: calc(1% + 20px);
+            background-color: rgba(17, 45, 82, 0.9);
+            color: #ffd700;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.3s ease;
+        }
+        #start-btn:hover {
+            background-color: rgba(255, 215, 0, 0.9);
+            color: #0a192f;
+        }
+        /* 月亮图标：放置在背景最右侧、荷灯寄月按钮斜上方 */
+        .moon-icon {
+            position: absolute;
+            top: 80px; /* 荷灯寄月按钮斜上方 */
+            right: 20px; /* 背景最右侧 */
+            width: 60px; /* 放大月亮更显眼 */
+            height: auto;
+            z-index: 10; /* 低于按钮，高于背景 */
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
+            animation: moonFloat 10s ease-in-out infinite alternate;
+        }
+        @keyframes moonFloat {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-15px) rotate(3deg); }
+        }
+        /* 游戏弹窗 */
+        .game-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(17, 45, 82, 0.95);
+            padding: 40px 60px;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            display: none;
+            z-index: 30;
+        }
+        .game-modal h2 {
+            color: #ffd700;
+            font-size: 32px;
+            margin: 0 0 15px;
+        }
+        .game-modal p {
+            color: #c9d8e9;
+            font-size: 16px;
+            margin: 0 0 20px;
+            line-height: 1.6;
+        }
+        .game-btn {
+            background: linear-gradient(135deg, #ffd700, #f0e68c);
+            color: #0a192f;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+            margin: 0 10px;
+        }
+        .game-btn:hover {
+            background: linear-gradient(135deg, #f0e68c, #e6d96c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 215, 0, 0.6);
+        }
+        /* 页脚：完全隐藏 */
+        .footer {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 月亮图标：背景最右侧、荷灯寄月斜上方 -->
+    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a318b11395fa41e3826a6be464a657a2.png~tplv-a9rns2rl98-image.png?rcl=202601051456207EE87EBAAC640D618379&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083820180&x-signature=qbYXe%2Fqakeqsn0VdjoghNV1itnc%3D" 
+         alt="月亮" class="moon-icon">
+    
+    <div class="container">
+        <h1 class="page-title">平湖秋月</h1>
+        <button id="start-btn">荷灯寄月</button>
+        <div id="game-container">
+            <div class="game-modal" id="win-modal">
+                <h2>恭喜通关！🌕</h2>
+                <p id="win-desc">你积累了满分，荷灯映月，美不胜收~</p>
+                <button class="game-btn" id="confirm-btn">确定</button>
+            </div>
+        </div>
+        <footer class="footer"></footer>
+    </div>
+
+    <script>
+        // 游戏核心逻辑
+        const gameConfig = {
+            lampTypes: [
+                { 
+                    type: 'common', 
+                    src: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/7f92fc2d25524433a142d537383fdf0a.png~tplv-a9rns2rl98-image.png?rcl=20260105144715E8BB8F1A084464F3B81D&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083819635&x-signature=4LiW0YELegCEix0IEX0SF3zH%2BK4%3D', 
+                    score: 10, 
+                    size: 45, 
+                    class: 'lamp-common' 
+                },
+                { 
+                    type: 'rare', 
+                    src: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/aa978b9488b04f1b838ba993f27657ee.png~tplv-a9rns2rl98-image.png?rcl=20260105144715E8BB8F1A084464F3B81D&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083819635&x-signature=dAWiUpOuW1Vbbw0QLyXWnfQvDts%3D', 
+                    score: 20, 
+                    size: 55, 
+                    class: 'lamp-rare' 
+                },
+                { 
+                    type: 'epic', 
+                    src: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/3a55db4ae78c47daa4a0b9b9c07d2d8f.png~tplv-a9rns2rl98-image.png?rcl=20260105144715E8BB8F1A084464F3B81D&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083819635&x-signature=7yj5Sb5MuKybYe9SG0y9zR9q%2B6M%3D', 
+                    score: 50, 
+                    size: 60, 
+                    class: 'lamp-epic' 
+                }
+            ],
+            totalLamps: 6,
+            requiredTypes: 3 // 必须包含3种样式
+        };
+
+        let gameState = {
+            score: 0,
+            lampCount: 0,
+            isGameOver: false,
+            hasStarted: false,
+            lamps: [],
+            usedTypes: new Set() // 记录已使用的荷灯样式
+        };
+
+        // 获取游戏元素
+        const gameContainer = document.getElementById('game-container');
+        const startBtn = document.getElementById('start-btn');
+        const winModal = document.getElementById('win-modal');
+        const winDesc = document.getElementById('win-desc');
+        const confirmBtn = document.getElementById('confirm-btn');
+
+        // 荷灯概率1:1:1，且确保6个包含3种样式
+        function getRandomLampType() {
+            const types = gameConfig.lampTypes;
+            const remainingTypes = types.filter(type => !gameState.usedTypes.has(type.type));
+            
+            // 若还有未使用的样式，优先选未使用的（确保3种都出现）
+            if (remainingTypes.length > 0 && gameState.lampCount < gameConfig.totalLamps) {
+                return remainingTypes[Math.floor(Math.random() * remainingTypes.length)];
+            }
+            
+            // 所有样式都已出现后，1:1:1随机选
+            const randomIdx = Math.floor(Math.random() * types.length);
+            return types[randomIdx];
+        }
+
+        // 碰撞检测
+        function isCollision(newLampX, newLampY, newLampSize) {
+            const buffer = 10;
+            for (const lamp of gameState.lamps) {
+                const lampX = parseFloat(lamp.style.left);
+                const lampY = parseFloat(lamp.style.top);
+                const lampSize = parseFloat(lamp.dataset.size);
+
+                const dx = (newLampX + newLampSize / 2) - (lampX + lampSize / 2);
+                const dy = (newLampY + newLampSize / 2) - (lampY + lampSize / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < (newLampSize / 2 + lampSize / 2 + buffer)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 创建荷灯
+        function createLotusLamp(x, y) {
+            if (!gameState.hasStarted || gameState.isGameOver) return;
+            if (gameState.lampCount >= gameConfig.totalLamps) return;
+
+            const lampType = getRandomLampType();
+            const lampSize = lampType.size;
+            const maxX = gameContainer.offsetWidth - lampSize;
+            const maxY = gameContainer.offsetHeight - lampSize;
+            const finalX = Math.min(Math.max(x - lampSize / 2, 0), maxX);
+            const finalY = Math.min(Math.max(y - lampSize / 2, 0), maxY);
+
+            if (isCollision(finalX, finalY, lampSize)) return;
+
+            const lamp = new Image();
+            lamp.src = lampType.src;
+            lamp.className = `lotus-lamp ${lampType.class}`;
+            lamp.style.left = `${finalX}px`;
+            lamp.style.top = `${finalY}px`;
+            lamp.dataset.type = lampType.type;
+            lamp.dataset.score = lampType.score;
+            lamp.dataset.size = lampType.size;
+
+            lamp.onload = function() {
+                gameContainer.appendChild(lamp);
+                gameState.lamps.push(lamp);
+                gameState.lampCount++;
+                gameState.score += parseInt(lampType.score);
+                gameState.usedTypes.add(lampType.type); // 记录已使用的样式
+
+                // 检查是否放满6个荷灯
+                if (gameState.lampCount >= gameConfig.totalLamps) {
+                    endGame(true);
+                }
+            };
+
+            lamp.onerror = function() {
+                console.log("荷灯加载失败：", lampType.src, "，请核对图片链接是否有效");
+            };
+        }
+
+        // 开始游戏
+        function startGame() {
+            resetGameVisual();
+            gameState.hasStarted = true;
+            gameState.isGameOver = false;
+            gameState.score = 0;
+            gameState.lampCount = 0;
+            gameState.usedTypes.clear();
+            startBtn.style.display = 'none';
+        }
+
+        // 游戏结束逻辑
+        function endGame(isWin) {
+            gameState.isGameOver = true;
+            winModal.style.display = isWin ? 'block' : 'none';
+            winDesc.textContent = `你积累了${gameState.score}分，成功放置6个荷灯（包含3种样式）！荷灯映月，美不胜收~`;
+        }
+
+        // 点击确定关闭弹窗，重新显示按钮
+        function confirmWin() {
+            winModal.style.display = 'none';
+            startBtn.style.display = 'block';
+        }
+
+        // 重置游戏视觉效果
+        function resetGameVisual() {
+            document.querySelectorAll('.lotus-lamp').forEach(lamp => lamp.remove());
+            gameState.lamps = [];
+        }
+
+        // 绑定事件
+        gameContainer.addEventListener('click', (e) => {
+            const rect = gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            createLotusLamp(x, y);
+        });
+
+        startBtn.addEventListener('click', startGame);
+        confirmBtn.addEventListener('click', confirmWin);
+
+        // 页面初始化
+        window.onload = () => {
+            // 检查月亮图片是否加载成功
+            const moonIcon = document.querySelector('.moon-icon');
+            moonIcon.onerror = function() {
+                console.log("月亮图片加载失败，请检查链接是否有效");
+                // 备用方案：显示文字月亮
+                moonIcon.alt = "🌕";
+                moonIcon.style.fontSize = "60px";
+                moonIcon.style.width = "auto";
+                moonIcon.style.height = "auto";
+            };
+        };
+    </script>
+</body>
+</html>

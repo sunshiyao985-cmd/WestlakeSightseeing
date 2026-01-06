@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>指尖绘西湖 - 路线规划</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", "PingFang SC", sans-serif;
+        }
+
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c0c4cc;
+            border-radius: 3px;
+            transition: background 0.3s ease;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #909399;
+        }
+        ::-webkit-scrollbar-button {
+            display: none;
+        }
+
+        /* 页面容器 */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            background-color: #333;
+            color: #fff;
+            padding: 0 15px;
+        }
+        .top-bar .back, .top-bar .setting {
+            font-size: 20px;
+        }
+        .top-bar .title {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        /* 头部导航 */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 22px;
+            color: #165DFF;
+            font-weight: 600;
+        }
+        .header .menu-icon {
+            width: 24px;
+            height: 24px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23303133'%3E%3Cpath d='M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z'/%3E%3C/svg%3E") no-repeat center;
+        }
+
+        /* 横幅区域 */
+        .banner {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            overflow: hidden;
+        }
+        .banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 8s ease;
+        }
+        .banner:hover img {
+            transform: scale(1.05);
+        }
+        .banner .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5));
+        }
+        .banner h2 {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .banner p {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 16px;
+            color: #fff;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        }
+
+        /* 主要内容区 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* 功能卡片区 */
+        .features {
+            margin: 30px 0;
+        }
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #165DFF;
+        }
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .feature-card {
+            flex: 1;
+            min-width: 280px;
+            max-width: 400px;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .feature-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .feature-card .content {
+            padding: 20px;
+        }
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #165DFF;
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: #606266;
+        }
+
+        /* 景点展示区 */
+        .attractions {
+            margin: 40px 0;
+        }
+        .attraction-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .attraction-item {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .attraction-item img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+        .attraction-item .info {
+            padding: 15px;
+        }
+        .attraction-item h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .attraction-item .tag {
+            display: inline-block;
+            font-size: 12px;
+            color: #165DFF;
+            background: rgba(22, 93, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* 文化介绍区 */
+        .culture {
+            margin: 40px 0;
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .culture p {
+            margin-bottom: 15px;
+            color: #606266;
+        }
+        .culture-img {
+            width: 100%;
+            height: 250px;
+            border-radius: 8px;
+            margin: 20px 0;
+            object-fit: cover;
+        }
+
+        /* 个人信息区 */
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            background-color: #fff;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: url("https://picsum.photos/100/100?random=10") no-repeat center;
+            background-size: cover;
+            margin-bottom: 10px;
+        }
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .user-title {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 功能列表区 */
+        .func-list {
+            margin: 10px 0;
+            background-color: #fff;
+        }
+        .func-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            padding: 0 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .func-item:hover {
+            background-color: #f5f5f5;
+        }
+        .func-item:last-child {
+            border-bottom: none;
+        }
+        .func-item .left {
+            display: flex;
+            align-items: center;
+        }
+        .func-item i {
+            font-size: 18px;
+            margin-right: 10px;
+            color: #666;
+        }
+        .func-item .right {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* 路线规划页面样式 */
+        .route-page-content {
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), 
+                        url("https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/7a0c935508354d218800a5f7c7e7b9e0.jpg~tplv-a9rns2rl98-image.png?rcl=202601031636521CA3F4992E025A5A6981&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083653413&x-signature=LwMWCJY41W%2F0l4irn%2FCN0JS6%2F30%3D") no-repeat center center;
+            background-size: cover;
+            min-height: 100vh;
+            color: #fff;
+            padding-bottom: 80px;
+        }
+
+        .page-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            padding-bottom: 80px; /* 避开底部导航栏 */
+        }
+
+        .section-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .section-btn {
+            padding: 12px 30px;
+            background: rgba(42, 91, 132, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .section-btn:hover {
+            background: rgba(58, 124, 168, 0.9);
+            transform: translateY(-3px);
+        }
+
+        .section-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            color: #333;
+            display: none; /* 默认隐藏 */
+        }
+        .section-content.active {
+            display: block;
+        }
+
+        .map-img {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .map-desc {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .route-planner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .route-planner h2 {
+            text-align: center;
+            color: #2a5b84;
+            margin-bottom: 20px;
+        }
+        .date-picker {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .date-picker label {
+            font-size: 16px;
+            color: #666;
+        }
+        .date-picker input {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .route-result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #2a5b84;
+            border-radius: 4px;
+            display: none;
+        }
+        .route-result h3 {
+            color: #2a5b84;
+            margin-bottom: 10px;
+        }
+        .route-list {
+            line-height: 1.8;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px;
+            background-color: #333;
+            color: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 99;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .nav-item.active {
+            color: #4CAF50;
+        }
+
+        /* 预留底部空间 */
+        .footer-space {
+            height: 80px;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .section-btn {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+            .section-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 首页 -->
+    <div id="home-page" class="page active">
+        <div class="header">
+            <h1>指尖绘西湖</h1>
+            <div class="menu-icon"></div>
+        </div>
+
+        <div class="banner">
+            <img src="https://picsum.photos/id/1036/1600/900" alt="西湖全景">
+            <div class="overlay"></div>
+            <h2>人间天堂·西湖</h2>
+            <p>三面云山一面城，淡妆浓抹总相宜</p>
+        </div>
+
+        <div class="container">
+            <section class="features">
+                <h3 class="section-title">核心功能</h3>
+                <div class="card-grid">
+                    <div class="feature-card">
+                        <img src="https://picsum.photos/id/1039/800/600" alt="十景闯关">
+                        <div class="content">
+                            <h3>十景闯关</h3>
+                            <p>探索西湖十景，解锁每个景点的趣味知识关卡，边游边学，深入了解西湖文化底蕴。</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <img src="https://picsum.photos/id/1051/800/600" alt="路线规划">
+                        <div class="content">
+                            <h3>路线规划</h3>
+                            <p>根据游览时间、兴趣偏好，智能推荐最佳游览路线，避开人潮，体验最美西湖。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="attractions">
+                <h3 class="section-title">西湖十景精选</h3>
+                <div class="attraction-list">
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1037/600/400" alt="苏堤春晓">
+                        <div class="info">
+                            <h4>苏堤春晓</h4>
+                            <span class="tag">春季</span>
+                        </div>
+                    </div>
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1040/600/400" alt="曲院风荷">
+                        <div class="info">
+                            <h4>曲院风荷</h4>
+                            <span class="tag">夏季</span>
+                        </div>
+                    </div>
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1043/600/400" alt="平湖秋月">
+                        <div class="info">
+                            <h4>平湖秋月</h4>
+                            <span class="tag">秋季</span>
+                        </div>
+                    </div>
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1050/600/400" alt="断桥残雪">
+                        <div class="info">
+                            <h4>断桥残雪</h4>
+                            <span class="tag">冬季</span>
+                        </div>
+                    </div>
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1054/600/400" alt="柳浪闻莺">
+                        <div class="info">
+                            <h4>柳浪闻莺</h4>
+                            <span class="tag">鸟类</span>
+                        </div>
+                    </div>
+                    <div class="attraction-item">
+                        <img src="https://picsum.photos/id/1055/600/400" alt="花港观鱼">
+                        <div class="info">
+                            <h4>花港观鱼</h4>
+                            <span class="tag">赏花</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="culture">
+                <h3 class="section-title">西湖文化</h3>
+                <p>西湖文化景观是自然美与人文美完美结合的典范，它孕育了"三面云山一面城"的城市格局，也催生了大量的诗词歌赋、神话传说。</p>
+                <p>从白居易、苏东坡治理西湖，到梁山伯与祝英台的爱情故事，再到济公活佛的传说，西湖承载了丰富的文化内涵。</p>
+                <img src="https://picsum.photos/id/1061/1200/600" alt="西湖文化" class="culture-img">
+                <p>2011年6月24日，"杭州西湖文化景观"正式被列入《世界遗产名录》，成为中国第41处世界遗产，其核心价值在于"它是中国历代文化精英秉承'天人合一'哲理，在深厚的中国古典文学、绘画美学、造园艺术和技巧传统背景下，持续进行景观设计与营造的杰出范例。"</p>
+            </section>
+
+            <div class="footer-space"></div>
+        </div>
+    </div>
+
+    <!-- 闯关页面 -->
+    <div id="game-page" class="page">
+        <div class="top-bar">
+            <div class="back"><i class="fas fa-arrow-left"></i></div>
+            <div class="title">十景闯关</div>
+            <div class="setting"></div>
+        </div>
+        <div class="container" style="padding: 20px;">
+            <h3 class="section-title">景点闯关</h3>
+            <div class="func-list" id="scenery-list">
+                <!-- 三潭映月 -->
+                <div class="func-item" data-url="santanyinyue.html.html">
+                    <div class="left">
+                        <i class="fas fa-moon"></i>
+                        <span>三潭映月</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 平湖秋月 -->
+                <div class="func-item" data-url="平湖秋月.html">
+                    <div class="left">
+                        <i class="fas fa-moon-o"></i>
+                        <span>平湖秋月</span>
+                    </div>
+                    <div class="right">进行中</div>
+                </div>
+                <!-- 花港观鱼 -->
+                <div class="func-item" data-url="花港观鱼.html.html">
+                    <div class="left">
+                        <i class="fas fa-fish"></i>
+                        <span>花港观鱼</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 南屏晚钟 -->
+                <div class="func-item" data-url="wanzhong.html">
+                    <div class="left">
+                        <i class="fas fa-bell"></i>
+                        <span>南屏晚钟</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 苏堤春晓 -->
+                <div class="func-item" data-url="sudichunxiao.html.html">
+                    <div class="left">
+                        <i class="fas fa-leaf"></i>
+                        <span>苏堤春晓</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 双峰插云 -->
+                <div class="func-item" data-url="shuangfeng.html">
+                    <div class="left">
+                        <i class="fas fa-mountain"></i>
+                        <span>双峰插云</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 曲苑和风 -->
+                <div class="func-item" data-url="quyuanfenghe.html.html">
+                    <div class="left">
+                        <i class="fas fa-pagelines"></i>
+                        <span>曲苑和风</span>
+                    </div>
+                    <div class="right">已完成</div>
+                </div>
+                <!-- 柳浪闻莺 -->
+                <div class="func-item" data-url="liu.html">
+                    <div class="left">
+                        <i class="fas fa-feather-alt"></i>
+                        <span>柳浪闻莺</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 雷峰夕照 -->
+                <div class="func-item" data-url="leifeng.html">
+                    <div class="left">
+                        <i class="fas fa-sun"></i>
+                        <span>雷峰夕照</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+                <!-- 断桥残雪 -->
+                <div class="func-item" data-url="duanqiao.html">
+                    <div class="left">
+                        <i class="fas fa-snowflake"></i>
+                        <span>断桥残雪</span>
+                    </div>
+                    <div class="right">未解锁</div>
+                </div>
+            </div>
+            <div class="footer-space"></div>
+        </div>
+    </div>
+
+    <!-- 路线页面 -->
+    <div id="route-page" class="page route-page-content">
+        <div class="top-bar">
+            <div class="back"><i class="fas fa-arrow-left"></i></div>
+            <div class="title">推荐路线</div>
+            <div class="setting"></div>
+        </div>
+        
+        <!-- 页面容器 -->
+        <div class="page-container">
+            <!-- 板块切换按钮 -->
+            <div class="section-buttons">
+                <button class="section-btn" onclick="showSection('map-section')">十景地图</button>
+                <button class="section-btn" onclick="showSection('custom-route-section')">私人定制旅游路线</button>
+            </div>
+
+            <!-- 十景地图板块 -->
+            <div class="section-content active" id="map-section">
+                <h2 style="text-align: center; color: #2a5b84; margin-bottom: 20px;">西湖十景位置图</h2>
+                <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/da42d354576547f096736101884d6a12.jpg~tplv-a9rns2rl98-image.png?rcl=202601031636521CA3F4992E025A5A6981&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083653413&x-signature=OeVLocV1VDcvMUkAbofanaPc1IE%3D" alt="西湖十景地图" class="map-img">
+                <p class="map-desc">图中包含西湖十景的位置分布，点击导航栏"首页"可进入各景点详情~</p>
+            </div>
+
+            <!-- 私人定制路线板块 -->
+            <div class="section-content" id="custom-route-section">
+                <div class="route-planner">
+                    <h2>智能路线规划</h2>
+                    
+                    <!-- 日期选择器 -->
+                    <div class="date-picker">
+                        <label>选择来访日期：</label>
+                        <input type="date" id="visitDate">
+                        <button onclick="planRoute()" style="padding: 8px 16px; background: #2a5b84; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">生成路线</button>
+                    </div>
+
+                    <!-- 路线结果展示区 -->
+                    <div class="route-result" id="routeResult">
+                        <h3>为您规划的<span id="dateText"></span>游览路线：</h3>
+                        <div class="route-list" id="routeList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个人中心页面 -->
+    <div id="profile-page" class="page">
+        <div class="top-bar">
+            <div class="back"><i class="fas fa-arrow-left"></i></div>
+            <div class="title">我的</div>
+            <div class="setting"><i class="fas fa-cog"></i></div>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar"></div>
+            <div class="user-name">西湖小达人</div>
+            <div class="user-title">已解锁 3/10 景点勋章</div>
+        </div>
+        <div class="func-list">
+            <div class="func-item">
+                <div class="left">
+                    <i class="fas fa-user-circle"></i>
+                    <span>账号管理</span>
+                </div>
+                <div class="right"><i class="fas fa-angle-right"></i></div>
+            </div>
+            <div class="func-item">
+                <div class="left">
+                    <i class="fas fa-medal"></i>
+                    <span>勋章墙</span>
+                </div>
+                <div class="right"><i class="fas fa-angle-right"></i></div>
+            </div>
+            <div class="func-item">
+                <div class="left">
+                    <i class="fas fa-map-o"></i>
+                    <span>收藏路线</span>
+                </div>
+                <div class="right"><i class="fas fa-angle-right"></i></div>
+            </div>
+            <div class="func-item">
+                <div class="left">
+                    <i class="fas fa-comments"></i>
+                    <span>客服中心</span>
+                </div>
+                <div class="right"><i class="fas fa-angle-right"></i></div>
+            </div>
+            <div class="func-item">
+                <div class="left">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+                <div class="right"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+        <div class="footer-space"></div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="home-page">
+            <i class="fas fa-home"></i>
+            <span>首页</span>
+        </div>
+        <div class="nav-item" data-page="game-page">
+            <i class="fas fa-gamepad"></i>
+            <span>闯关</span>
+        </div>
+        <div class="nav-item" data-page="route-page">
+            <i class="fas fa-map-signs"></i>
+            <span>路线</span>
+        </div>
+        <div class="nav-item" data-page="profile-page">
+            <i class="fas fa-user"></i>
+            <span>我的</span>
+        </div>
+    </div>
+
+    <script>
+        // 等待页面所有DOM元素加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 页面切换功能
+            const navItems = document.querySelectorAll('.nav-item');
+            const pages = document.querySelectorAll('.page');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    
+                    // 更新导航激活状态
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 显示对应页面
+                    pages.forEach(page => page.classList.remove('active'));
+                    document.getElementById(pageId).classList.add('active');
+                });
+            });
+
+            // 2. 顶部栏"返回"按钮功能
+            const backBtns = document.querySelectorAll('.top-bar .back');
+            backBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 返回首页
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    document.querySelector('.nav-item[data-page="home-page"]').classList.add('active');
+                    
+                    pages.forEach(page => page.classList.remove('active'));
+                    document.getElementById('home-page').classList.add('active');
+                    
+                    // 触摸/鼠标悬浮反馈
+                    this.style.color = '#ff6b6b';
+                    setTimeout(() => { this.style.color = '#fff'; }, 300);
+                });
+            });
+
+            // 3. 顶部栏"设置"按钮：弹窗提示
+            const settingBtn = document.querySelector('.top-bar .setting');
+            if (settingBtn) {
+                settingBtn.addEventListener('click', function() {
+                    alert('设置功能：\n1. 账号安全\n2. 消息通知\n3. 主题切换（待上线）');
+                    // 点击动画反馈
+                    this.style.transform = 'rotate(90deg)';
+                    this.style.transition = 'transform 0.3s ease';
+                    setTimeout(() => { this.style.transform = 'rotate(0)'; }, 300);
+                });
+            }
+
+            // 4. 个人头像：点击放大预览
+            const userAvatar = document.querySelector('.user-avatar');
+            if (userAvatar) {
+                userAvatar.addEventListener('click', function() {
+                    // 切换"放大/还原"状态
+                    const isZoomed = this.style.transform === 'scale(1.5)';
+                    this.style.transform = isZoomed ? 'scale(1)' : 'scale(1.5)';
+                    this.style.transition = 'transform 0.3s ease';
+                    this.style.boxShadow = isZoomed ? 'none' : '0 0 15px rgba(0,0,0,0.2)';
+                });
+            }
+
+            // 5. 功能列表项：点击反馈
+            const funcItems = document.querySelectorAll('.func-item');
+            funcItems.forEach(item => {
+                // 点击事件
+                item.addEventListener('click', function() {
+                    const funcName = this.querySelector('.left span')?.textContent;
+                    if (funcName) {
+                        switch(funcName) {
+                            case '勋章墙':
+                                alert(`勋章进度：已解锁3/10\n解锁方式：完成"西湖十景"闯关任务`);
+                                break;
+                            case '收藏路线':
+                                alert(`您的收藏路线为空，快去探索并收藏喜欢的路线吧！`);
+                                break;
+                            default:
+                                alert(`【${funcName}】页面加载中...`);
+                        }
+                    }
+                });
+
+                // 触摸/鼠标悬浮反馈
+                item.addEventListener('touchstart', handleHoverIn);
+                item.addEventListener('mouseover', handleHoverIn);
+                item.addEventListener('touchend', handleHoverOut);
+                item.addEventListener('mouseout', handleHoverOut);
+
+                function handleHoverIn() {
+                    item.style.backgroundColor = '#f5f5f5';
+                    const rightIcon = item.querySelector('.right i');
+                    if (rightIcon) rightIcon.style.color = '#ff6b6b';
+                }
+
+                function handleHoverOut() {
+                    item.style.backgroundColor = '#fff';
+                    const rightIcon = item.querySelector('.right i');
+                    if (rightIcon) rightIcon.style.color = '#999';
+                }
+            });
+
+            // 6. 页面滚动：底部导航栏阴影动态显示
+            window.addEventListener('scroll', function() {
+                const bottomNav = document.querySelector('.bottom-nav');
+                bottomNav.style.boxShadow = window.scrollY > 50 
+                    ? '0 -2px 10px rgba(0,0,0,0.1)' 
+                    : 'none';
+            });
+
+            // 7. 闯关页面景点跳转功能
+            const sceneryItems = document.querySelectorAll('#scenery-list .func-item');
+            sceneryItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    if (url) {
+                        // 模拟跳转前确认
+                        const sceneryName = this.querySelector('.left span').textContent;
+                        const confirmJump = confirm(`即将跳转到【${sceneryName}】的闯关页面，确定吗？`);
+                        
+                        if (confirmJump) {
+                            // 这里使用window.location.href进行页面跳转
+                            // 如果文件在同一目录下，直接跳转
+                            window.location.href = url;
+                        }
+                    }
+                });
+            });
+        });
+
+        // 路线规划页面 - 板块切换函数
+        function showSection(sectionId) {
+            // 隐藏所有板块
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => section.classList.remove('active'));
+            // 显示目标板块
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // 路线规划页面 - 智能规划路线函数
+        function planRoute() {
+            const dateInput = document.getElementById('visitDate');
+            const visitDate = new Date(dateInput.value);
+            if (!visitDate || isNaN(visitDate.getTime())) {
+                alert("请选择有效的日期~");
+                return;
+            }
+
+            const month = visitDate.getMonth() + 1;
+            const dateStr = visitDate.getFullYear() + "年" + month + "月" + visitDate.getDate() + "日";
+            document.getElementById('dateText').textContent = dateStr;
+
+            let route = "";
+            if (month >= 3 && month <= 5) { // 春季
+                route = `
+                    上午：<strong>苏堤春晓</strong>（赏桃花）→ 花港观鱼（看樱花）<br>
+                    中午：楼外楼（吃杭帮菜）<br>
+                    下午：<strong>双峰插云</strong>（春季云雾最盛）→ 三潭印月<br>
+                    晚上：河坊街（逛夜景+吃小吃）
+                `;
+            } else if (month >= 6 && month <= 8) { // 夏季
+                route = `
+                    上午（早出发）：<strong>断桥残雪</strong>→ 白堤→ 平湖秋月（趁凉快）<br>
+                    中午：知味观（吃凉面/藕粉）<br>
+                    下午（室内+阴凉处）：浙江省博物馆→ <strong>曲院风荷</strong>（赏荷花+树荫下休息）<br>
+                    晚上：湖滨步行街（看音乐喷泉）
+                `;
+            } else if (month >= 9 && month <= 11) { // 秋季
+                route = `
+                    上午：<strong>满陇桂雨</strong>（赏桂花+闻香）→ 虎跑泉<br>
+                    中午：绿茶餐厅（吃桂花糕）<br>
+                    下午：<strong>雷峰塔</strong>（登塔看秋景）→ 苏堤<br>
+                    晚上：南山路（逛文艺小店+看夜景）
+                `;
+            } else { // 冬季
+                route = `
+                    上午：<strong>断桥残雪</strong>（若下雪必看）→ 孤山<br>
+                    中午：外婆家（吃暖锅/东坡肉）<br>
+                    下午：<strong>灵隐寺</strong>（逛寺庙+暖身）→ 飞来峰<br>
+                    晚上：清河坊（喝热黄酒+吃糖炒栗子）
+                `;
+            }
+
+            document.getElementById('routeList').innerHTML = route;
+            document.getElementById('routeResult').style.display = "block";
+        }
+    </script>
+</body>
+</html>

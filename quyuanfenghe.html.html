@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>曲院风荷</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/603e6ea365a14244ab26607812e5d15d.jpg~tplv-a9rns2rl98-image.png?rcl=2026010200463893AED3A4979EE7B0937A&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083509999&x-signature=osEcRBuGNSz0eTR91gU0%2FGwEUFU%3D') no-repeat center center fixed !important;
+            background-size: cover !important;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            font-family: "微软雅黑", "宋体", sans-serif;
+            min-height: 100vh;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: -1;
+        }
+        h1 {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2c5f2d;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+            font-family: "楷体", "华文行楷", serif;
+        }
+        .lotus-container {
+            width: min(800px, 90vw);
+            height: min(900px, 90vh);
+            position: relative;
+            border-radius: 0;
+            overflow: visible !important;
+            box-shadow: none;
+            background: transparent !important;
+            padding: 0;
+            z-index: 2;
+        }
+        .water-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            filter: brightness(0.98) contrast(1.02);
+            opacity: 0.8;
+        }
+        /* 为每个荷花组设置独立层级，避免遮挡 */
+        .lotus-group {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            /* 确保组区域可点击 */
+            pointer-events: auto !important;
+        }
+        .lotus-group.sub1 { z-index: 10; }
+        .lotus-group.sub2 { z-index: 11; }
+        .lotus-group.new-lotus2 { z-index: 12; }
+        .lotus-group.new-lotus3 { z-index: 13; }
+        .lotus-group.main { z-index: 14; }
+        .lotus-group.new-lotus1 { z-index: 15; }
+        
+        /* 强制点击区域扩展（不影响视觉尺寸） */
+        .lotus-img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: contain;
+            display: block !important;
+            opacity: 0;
+            cursor: pointer !important;
+            z-index: 4;
+            pointer-events: auto !important;
+            /* 扩展点击区域 - 仅增加可点击范围，不改变视觉大小 */
+            width: 100%;
+            height: 100%;
+            min-width: 40px;
+            min-height: 40px;
+        }
+        .lotus-img.active {
+            opacity: 1;
+        }
+
+        /* 原始荷花位置尺寸 - 仅修改new-lotus1 */
+        .lotus-group.sub1 .lotus-img { left: 10%; top: 85%; max-width: 14%; max-height: 22%; --base-top: 85%; }
+        .lotus-group.main .lotus-img { left: 50%; top: 55%; max-width: 5%; max-height: 10%; --base-top: 55%; }
+        .lotus-group.sub2 .lotus-img { left: 68%; top: 76%; max-width: 10%; max-height: 18%; --base-top: 76%; }
+        /* 调整new-lotus1：往上（top从65%→58%）、稍大（宽20%→22%，高10%→12%） */
+        .lotus-group.new-lotus1 .lotus-img { left: 35%; top: 58%; max-width: 22%; max-height: 12%; --base-top: 58%; }
+        .lotus-group.new-lotus2 .lotus-img { left: 38%; top: 80%; max-width: 25%; max-height: 28%; --base-top: 80%; }
+        .lotus-group.new-lotus3 .lotus-img { left: 90%; top: 75%; max-width: 12%; max-height: 21%; --base-top: 75%; }
+
+        .lotus-img[data-index="3"] { top: calc(var(--base-top) - 1%); }
+        .lotus-img[data-index="4"] { top: calc(var(--base-top) - 1.5%); }
+        .lotus-img[data-index="5"],
+        .lotus-img[data-index="6"] { top: calc(var(--base-top) - 3%); }
+        .lotus-img[data-index="7"] { top: calc(var(--base-top) - 3.5%); }
+
+        .butterfly {
+            position: absolute;
+            width: 60px !important; 
+            height: 50px !important; 
+            z-index: 99999 !important; 
+            top: 25%;
+            left: 15%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: left 0.08s linear, top 0.08s linear, transform 0.2s ease-in-out, opacity 0.3s ease;
+        }
+        .butterfly.flying {
+            opacity: 1 !important; 
+        }
+
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 100px;
+            z-index: 10;
+        }
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(#4f9e52, #2d6b33);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            font-family: "楷体", "微软雅黑", serif;
+            border: 1px solid #7ccd7c;
+        }
+        button:hover {
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            background: linear-gradient(#5fbe65, #3d7b43);
+        }
+        button:disabled { 
+            background: #999; 
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none; 
+            border-color: #ccc;
+        }
+
+        .loading-tip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px #000;
+            z-index: 5;
+            font-family: "楷体", serif;
+        }
+
+        @media (max-width: 800px) {
+            h1 { font-size: 2rem; top: 10px; }
+            .lotus-container { width: 95vw; height: 70vh; }
+            .btn-wrapper { flex-direction: row; margin-top: 20px; }
+            button { padding: 12px 24px; font-size: 1rem; }
+            .butterfly { width: 40px !important; height: 35px !important; } 
+            .lotus-group.sub1 .lotus-img { left: 8%; top: 88%; max-width: 12%; max-height: 20%; }
+            /* 同步调整响应式下new-lotus1：往上（top63%→56%）、稍大（宽18%→20%，高9%→11%） */
+            .lotus-group.new-lotus1 .lotus-img { left: 32%; top: 56%; max-width: 20%; max-height: 11%; }
+            .lotus-group.new-lotus2 .lotus-img { left: 35%; top: 78%; max-width: 22%; max-height: 25%; }
+            .lotus-group.new-lotus3 .lotus-img { left: 92%; top: 78%; max-width: 10%; max-height: 19%; }
+            .lotus-group.main .lotus-img { left: 50%; top: 57%; }
+            .lotus-group.sub2 .lotus-img { left: 72%; top: 80%; }
+        }
+
+        /* 仅新增弹窗样式 */
+        .poetry-popup {
+            position: fixed !important;
+            z-index: 999999 !important;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(10px);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-family: "华文行楷", "楷体", serif;
+            font-size: 22px;
+            line-height: 1.8;
+            color: #5a3823;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+            background: linear-gradient(135deg, rgba(255,253,245,0.95), rgba(255,248,230,0.85));
+            border: 2px solid #d4b886;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 10px rgba(212, 184, 134, 0.2);
+            padding: 20px 15px;
+            margin: 10px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow: hidden;
+            transform-origin: center top;
+        }
+        .poetry-popup.show {
+            opacity: 1 !important;
+            transform: translateY(0) rotate(0.5deg);
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>曲院风荷</h1>
+    
+    <div class="lotus-container">
+        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/b34e3c56348f4ac8ac0b74a6b32f8d15.jpg~tplv-a9rns2rl98-image.png?rcl=20251228180651B6921E46F3DFB8C0E3E0&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083140412&x-signature=TShx74QvhoPmT9VLJK4P1nMSp%2Bw%3D" alt="水景背景" class="water-bg">
+        <div class="loading-tip">图片加载中...</div>
+        
+        <img 
+            src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/f8ab7334a66043c59751ff068b493c1a.png~tplv-a9rns2rl98-image.png?rcl=20251231180259DC3BEE164DE475991018&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083399380&x-signature=ZRZB2UZY6W%2FQR1ooEmTxXyoRtmY%3D" 
+            alt="蓝色蝴蝶" 
+            class="butterfly" 
+            id="butterfly"
+        >
+
+        <!-- 原始荷花结构 -->
+        <div class="lotus-group sub1" data-poetry="小荷才露尖尖角，早有蜻蜓立上头。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/40b74cdab2864b44a94b40851e019f1b.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=e%2FTslMux%2FzmfdHhjw4nZ6Va6GRU%3D" alt="荷花闭合" class="lotus-img active" data-index="0">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/1b22acb7656a42de98fce7a353e31759.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=KHV4kapaI%2FNOcV7SSqaAlmyxEtA%3D" alt="荷花半开1" class="lotus-img" data-index="1">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4ab7229d4dbe43a1a700d0d4eea70961.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=HtNXTiSQnuybjO55vcITUtnOczU%3D" alt="荷花半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b5625bf109342869c484c127847998d.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=5mNkoePcpgNrjjOhNtRSSr8XVaE%3D" alt="荷花半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/0efdcd5070ed40a28e9e705f774a69be.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=hmcq53XGxtoKrvqWqR5B6s%2FC8cU%3D" alt="荷花半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/5d7789c3c83a4b9fb5fac1ea7855fb39.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=mX4DCHp3vrPt5K853GPyDw7sGvs%3D" alt="荷花半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a36aca03d4dc41d78111e7422a4086c4.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=StWq0bLoJX062Ro6CfzZWkaojaU%3D" alt="荷花全开" class="lotus-img" data-index="6">
+        </div>
+        <div class="lotus-group sub2" data-poetry="荷风送香气，竹露滴清响。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/40b74cdab2864b44a94b40851e019f1b.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=e%2FTslMux%2FzmfdHhjw4nZ6Va6GRU%3D" alt="荷花闭合" class="lotus-img active" data-index="0">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/1b22acb7656a42de98fce7a353e31759.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=KHV4kapaI%2FNOcV7SSqaAlmyxEtA%3D" alt="荷花半开1" class="lotus-img" data-index="1">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4ab7229d4dbe43a1a700d0d4eea70961.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=HtNXTiSQnuybjO55vcITUtnOczU%3D" alt="荷花半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b5625bf109342869c484c127847998d.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=5mNkoePcpgNrjjOhNtRSSr8XVaE%3D" alt="荷花半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/0efdcd5070ed40a28e9e705f774a69be.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=hmcq53XGxtoKrvqWqR5B6s%2FC8cU%3D" alt="荷花半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/5d7789c3c83a4b9fb5fac1ea7855fb39.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=mX4DCHp3vrPt5K853GPyDw7sGvs%3D" alt="荷花半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a36aca03d4dc41d78111e7422a4086c4.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=StWq0bLoJX062Ro6CfzZWkaojaU%3D" alt="荷花全开" class="lotus-img" data-index="6">
+        </div>
+        <div class="lotus-group new-lotus2" data-poetry="江南可采莲，莲叶何田田。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ebeb5115adb642c0b967dd0f32ca76f6.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=j35ak7ZlchB8EbAIbnZTwuyvvx0%3D" alt="新荷花2闭合" class="lotus-img active" data-index="0">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/42b396aee0054347afb295be6906c46d.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=HlMRobo4GA%2BGKuURN6cbAL6FzMo%3D" alt="新荷花2半开1" class="lotus-img" data-index="1">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/f97fdad37c75447792764d23589e870a.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YInkSJp%2Fcyk9f5glnIJavXtUruM%3D" alt="新荷花2半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/43c9b6076b304232be9487b1758b1cfd.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=udHNB8ZzrsX625WU9E2arZzdUZg%3D" alt="新荷花2半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2105cdedd96044d09c5707033d7faad4.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YWztLdIxeI0jnV2JNh0O0mlPShk%3D" alt="新荷花2半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/65a51c0c86c54096a62442642d2361e1.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=Re%2F78on1iiBw613i09mKV%2FKdAJ8%3D" alt="新荷花2半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/949ce50519a347e9beecde95244f1023.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=M4gpC9y%2BfJHmTbRgmcLUgS2DjcA%3D" alt="新荷花2半开6" class="lotus-img" data-index="6">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4d380941345b4d9fbcc4a147d339a637.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=gVYxi5mPjZxgh3mQKyVDRjY8v9g%3D" alt="新荷花2全开" class="lotus-img" data-index="7">
+        </div>
+        <div class="lotus-group new-lotus3" data-poetry="荷叶罗裙一色裁，芙蓉向脸两边开。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ebeb5115adb642c0b967dd0f32ca76f6.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=j35ak7ZlchB8EbAIbnZTwuyvvx0%3D" alt="新荷花3闭合" class="lotus-img active" data-index="0">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/42b396aee0054347afb295be6906c46d.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=HlMRobo4GA%2BGKuURN6cbAL6FzMo%3D" alt="新荷花3半开1" class="lotus-img" data-index="1">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/f97fdad37c75447792764d23589e870a.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YInkSJp%2Fcyk9f5glnIJavXtUruM%3D" alt="新荷花3半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/43c9b6076b304232be9487b1758b1cfd.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=udHNB8ZzrsX625WU9E2arZzdUZg%3D" alt="新荷花3半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2105cdedd96044d09c5707033d7faad4.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YWztLdIxeI0jnV2JNh0O0mlPShk%3D" alt="新荷花3半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/65a51c0c86c54096a62442642d2361e1.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=Re%2F78on1iiBw613i09mKV%2FKdAJ8%3D" alt="新荷花3半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/949ce50519a347e9beecde95244f1023.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=M4gpC9y%2BfJHmTbRgmcLUgS2DjcA%3D" alt="新荷花3半开6" class="lotus-img" data-index="6">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4d380941345b4d9fbcc4a147d339a637.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=gVYxi5mPjZxgh3mQKyVDRjY8v9g%3D" alt="新荷花3全开" class="lotus-img" data-index="7">
+        </div>
+        <div class="lotus-group main" data-poetry="接天莲叶无穷碧，映日荷花别样红。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/40b74cdab2864b44a94b40851e019f1b.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=e%2FTslMux%2FzmfdHhjw4nZ6Va6GRU%3D" alt="荷花闭合" class="lotus-img active" data-index="0">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/1b22acb7656a42de98fce7a353e31759.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=KHV4kapaI%2FNOcV7SSqaAlmyxEtA%3D" alt="荷花半开1" class="lotus-img" data-index="1">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4ab7229d4dbe43a1a700d0d4eea70961.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=HtNXTiSQnuybjO55vcITUtnOczU%3D" alt="荷花半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4b5625bf109342869c484c127847998d.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=5mNkoePcpgNrjjOhNtRSSr8XVaE%3D" alt="荷花半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/0efdcd5070ed40a28e9e705f774a69be.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=hmcq53XGxtoKrvqWqR5B6s%2FC8cU%3D" alt="荷花半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/5d7789c3c83a4b9fb5fac1ea7855fb39.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=mX4DCHp3vrPt5K853GPyDw7sGvs%3D" alt="荷花半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a36aca03d4dc41d78111e7422a4086c4.png~tplv-a9rns2rl98-image.png?rcl=20251228174948D56CE18C4A83AEA51357&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083139389&x-signature=StWq0bLoJX062Ro6CfzZWkaojaU%3D" alt="荷花全开" class="lotus-img" data-index="6">
+        </div>
+        <div class="lotus-group new-lotus1" data-poetry="惟有绿荷红菡萏，卷舒开合任天真。">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/ebeb5115adb642c0b967dd0f32ca76f6.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=j35ak7ZlchB8EbAIbnZTwuyvvx0%3D" alt="新荷花1闭合" class="lotus-img active" data-index="0">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/42b396aee0054347afb295be6906c46d.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=HlMRobo4GA%2BGKuURN6cbAL6FzMo%3D" alt="新荷花1半开1" class="lotus-img" data-index="1">
+            <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/f97fdad37c75447792764d23589e870a.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YInkSJp%2Fcyk9f5glnIJavXtUruM%3D" alt="新荷花1半开2" class="lotus-img" data-index="2">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/43c9b6076b304232be9487b1758b1cfd.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=udHNB8ZzrsX625WU9E2arZzdUZg%3D" alt="新荷花1半开3" class="lotus-img" data-index="3">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2105cdedd96044d09c5707033d7faad4.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=YWztLdIxeI0jnV2JNh0O0mlPShk%3D" alt="新荷花1半开4" class="lotus-img" data-index="4">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/65a51c0c86c54096a62442642d2361e1.png~tplv-a9rns2rl98-image.png?rcl=2025123011445046A0EFCBBD0202F9351E&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083290290&x-signature=Re%2F78on1iiBw613i09mKV%2FKdAJ8%3D" alt="新荷花1半开5" class="lotus-img" data-index="5">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/949ce50519a347e9beecde95244f1023.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=M4gpC9y%2BfJHmTbRgmcLUgS2DjcA%3D" alt="新荷花1半开6" class="lotus-img" data-index="6">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/4d380941345b4d9fbcc4a147d339a637.png~tplv-a9rns2rl98-image.png?rcl=20251230121811D39C84B292D6ACE58C15&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083292291&x-signature=gVYxi5mPjZxgh3mQKyVDRjY8v9g%3D" alt="新荷花1全开" class="lotus-img" data-index="7">
+        </div>
+
+        <div class="poetry-popup" id="poetryPopup"></div>
+    </div>
+
+    <div class="btn-wrapper">
+        <button id="openBtn">绽放荷花</button>
+        <button id="butterflyBtn">蝴蝶飞舞</button>
+        <button id="resetBtn">重新绽放</button>
+    </div>
+
+    <script>
+		// 曲院风荷完成游戏
+		function completeQuyuanGame() {
+		    if (window.parent) {
+		        window.parent.postMessage({
+		            type: 'GAME_COMPLETE',
+		            gameId: 'quyuanfenghe'
+		        }, '*');
+		        
+		        try {
+		            window.parent.completeGame('quyuanfenghe');
+		        } catch (e) {
+		            console.log('游戏完成');
+		        }
+		    }
+		    
+		    alert('恭喜！您已成功解锁曲院风荷景点！');
+		    
+		    // 如果原游戏有完成按钮，可以在这里调用
+		    // 比如：检查所有荷花是否都绽放了
+		    checkAllLotusBloomed();
+		}
+		
+		function checkAllLotusBloomed() {
+		    // 这里添加检查荷花绽放状态的逻辑
+		    // 如果所有荷花都绽放了，调用完成函数
+		}
+        // 原始变量
+        const groups = [
+            document.querySelector('.lotus-group.main'),
+            document.querySelector('.lotus-group.sub1'),
+            document.querySelector('.lotus-group.sub2'),
+            document.querySelector('.lotus-group.new-lotus1'),
+            document.querySelector('.lotus-group.new-lotus2'),
+            document.querySelector('.lotus-group.new-lotus3')
+        ];
+        const imgGroups = groups.map(group => Array.from(group.querySelectorAll('.lotus-img')));
+        const openBtn = document.getElementById('openBtn');
+        const butterflyBtn = document.getElementById('butterflyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadingTip = document.querySelector('.loading-tip');
+        const butterfly = document.getElementById('butterfly');
+        const poetryPopup = document.getElementById('poetryPopup');
+        
+        let currentIndex = 0;
+        let animationInterval = null;
+        let loadedCount = 0;
+        let isAnimating = false;
+        let isButterflyFlying = false;
+        const maxFrameCount = Math.max(...imgGroups.map(group => group.length));
+        const totalImgs = imgGroups.reduce((sum, group) => sum + group.length, 0);
+        let wingFlapInterval = null; 
+        let hoverInterval = null; 
+        const lotusOrder = [1, 4, 3, 0, 2, 5];
+        let currentLotusIndex = 0;
+        let lotusPositions = [];
+
+        window.onload = function() {
+            document.body.style.backgroundImage = "url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/603e6ea365a14244ab26607812e5d15d.jpg~tplv-a9rns2rl98-image.png?rcl=2026010200463893AED3A4979EE7B0937A&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083509999&x-signature=osEcRBuGNSz0eTR91gU0%2FGwEUFU%3D')";
+            
+            lotusPositions = groups.map((group, idx) => getLotusPixelPosition(group, idx));
+            
+            loadingTip.style.display = 'none';
+
+            // ========== 核心修复：为每个荷花组绑定独立的点击事件 ==========
+            // 方式1：直接读取data-poetry属性（最可靠）
+            document.querySelectorAll('.lotus-group').forEach(group => {
+                group.addEventListener('click', function(e) {
+                    // 阻止事件冒泡到父级，避免多个事件触发
+                    e.stopImmediatePropagation();
+                    
+                    // 获取当前组的诗句
+                    const poetry = this.getAttribute('data-poetry');
+                    
+                    // 获取点击坐标
+                    const clickX = e.clientX + 20;
+                    const clickY = e.clientY - 20;
+                    
+                    // 设置弹窗内容和位置
+                    poetryPopup.textContent = poetry;
+                    poetryPopup.style.left = clickX + 'px';
+                    poetryPopup.style.top = clickY + 'px';
+                    poetryPopup.classList.add('show');
+                    
+                    // 10秒后隐藏弹窗
+                    setTimeout(() => {
+                        poetryPopup.classList.remove('show');
+                        setTimeout(() => {
+                            poetryPopup.textContent = '';
+                        }, 600);
+                    }, 10000);
+                }, { capture: true, once: false });
+            });
+
+            // 点击空白处隐藏弹窗
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.lotus-group')) {
+                    poetryPopup.classList.remove('show');
+                    setTimeout(() => poetryPopup.textContent = '', 600);
+                }
+            }, { capture: true });
+        };
+
+        // 原始函数 - 完全未修改
+        const getLotusPixelPosition = (group, idx) => {
+            const img = group.querySelector('.lotus-img');
+            const rect = img.getBoundingClientRect();
+            const containerRect = document.querySelector('.lotus-container').getBoundingClientRect();
+            const xPercent = (rect.left - containerRect.left) / containerRect.width * 100;
+            const yPercent = (rect.top - containerRect.top) / containerRect.height * 100;
+            return { 
+                id: idx,
+                rawX: xPercent,
+                rawY: yPercent,
+                percentX: xPercent + '%',
+                percentY: yPercent + '%'
+            };
+        };
+
+        window.addEventListener('resize', () => {
+            lotusPositions = groups.map((group, idx) => getLotusPixelPosition(group, idx));
+        });
+
+        imgGroups.flat().forEach(img => {
+            img.onload = () => {
+                loadedCount++;
+                if (loadedCount === totalImgs) {
+                    loadingTip.style.display = 'none';
+                    lotusPositions = groups.map((group, idx) => getLotusPixelPosition(group, idx));
+                }
+            };
+            img.onerror = () => {
+                loadingTip.textContent = `图片${loadedCount+1}加载失败`;
+                img.src = 'https://picsum.photos/400/600?lotus';
+            };
+        });
+
+        openBtn.addEventListener('click', () => {
+            if (loadedCount < totalImgs) {
+                alert('图片还在加载中，请稍等！');
+                return;
+            }
+            if (isAnimating) return;
+            isAnimating = true;
+            openBtn.disabled = true;
+            openBtn.textContent = "正在绽放...";
+            
+            clearInterval(animationInterval);
+            currentIndex = 0;
+            
+            animationInterval = setInterval(() => {
+                imgGroups.forEach((imgs) => {
+                    if (imgs[currentIndex]) imgs[currentIndex].classList.remove('active');
+                });
+                
+                currentIndex++;
+                
+                if (currentIndex < maxFrameCount) {
+                    imgGroups.forEach((imgs) => {
+                        if (imgs[currentIndex]) imgs[currentIndex].classList.add('active');
+                        else if (imgs[imgs.length - 1]) imgs[imgs.length - 1].classList.add('active');
+                    });
+                } else {
+                    clearInterval(animationInterval);
+                    openBtn.disabled = false;
+                    openBtn.textContent = "再次绽放";
+                    isAnimating = false;
+                    imgGroups.forEach((imgs) => {
+                        imgs.forEach(img => img.classList.remove('active'));
+                        imgs[imgs.length - 1].classList.add('active');
+                    });
+                }
+            }, 300);
+        });
+
+        const startWingFlap = (speed = 'normal') => {
+            clearInterval(wingFlapInterval);
+            const flapRates = {
+                fast: 150,
+                normal: 250,
+                slow: 400,
+                hover: 600
+            };
+            const rate = flapRates[speed];
+            
+            wingFlapInterval = setInterval(() => {
+                const rotate = Math.random() * 10 - 5; 
+                const scaleX = 1 + (Math.random() - 0.5) * 0.1; 
+                const scaleY = 1 + (Math.random() - 0.5) * 0.05; 
+                const opacity = 0.95 + Math.random() * 0.05; 
+                
+                butterfly.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) scale(${scaleX}, ${scaleY})`;
+                butterfly.style.opacity = opacity;
+            }, rate);
+        };
+
+        butterflyBtn.addEventListener('click', () => {
+            if (!loadedCount >= totalImgs || isButterflyFlying) {
+                alert(!loadedCount >= totalImgs ? '图片加载中，请稍等！' : '蝴蝶正在飞舞中...');
+                return;
+            }
+            
+            currentLotusIndex = 0;
+            isButterflyFlying = true;
+            butterflyBtn.disabled = true;
+            butterflyBtn.textContent = "蝴蝶飞舞中...";
+            
+            butterfly.classList.add('flying');
+            butterfly.style.left = '15%';
+            butterfly.style.top = '25%';
+            butterfly.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(1, 1)';
+            
+            startWingFlap('slow');
+
+            const flyToNextInOrder = (startPos) => {
+                if (currentLotusIndex >= lotusOrder.length) {
+                    clearInterval(wingFlapInterval);
+                    clearInterval(hoverInterval);
+                    isButterflyFlying = false;
+                    butterflyBtn.disabled = false;
+                    butterflyBtn.textContent = "蝴蝶飞舞";
+                    return;
+                }
+
+                const targetId = lotusOrder[currentLotusIndex];
+                const targetPos = lotusPositions[targetId];
+                
+                const flightDuration = 4000;
+                const startTime = Date.now();
+                const startX = parseFloat(startPos.left || startPos.rawX);
+                const startY = parseFloat(startPos.top || startPos.rawY);
+                const endX = targetPos.rawX;
+                const endY = targetPos.rawY;
+                
+                const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                const waveAmplitude = distance * 0.15;
+                
+                const controlPoints = [
+                    { x: startX + (endX - startX)*0.2, y: startY + (endY - startY)*0.2 + waveAmplitude },
+                    { x: startX + (endX - startX)*0.5, y: startY + (endY - startY)*0.5 - waveAmplitude },
+                    { x: startX + (endX - startX)*0.8, y: startY + (endY - startY)*0.8 + waveAmplitude }
+                ];
+
+                const flyAnimation = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / flightDuration, 1);
+                    
+                    let currentX, currentY;
+                    if (progress <= 0.3) {
+                        const t = progress / 0.3;
+                        currentX = bezier(t, startX, controlPoints[0].x, controlPoints[0].x, controlPoints[1].x);
+                        currentY = bezier(t, startY, controlPoints[0].y, controlPoints[0].y, controlPoints[1].y);
+                    } else if (progress <= 0.7) {
+                        const t = (progress - 0.3) / 0.4;
+                        currentX = bezier(t, controlPoints[1].x, controlPoints[1].x, controlPoints[2].x, controlPoints[2].x);
+                        currentY = bezier(t, controlPoints[1].y, controlPoints[1].y, controlPoints[2].y, controlPoints[2].y);
+                    } else {
+                        const t = (progress - 0.7) / 0.3;
+                        currentX = bezier(t, controlPoints[2].x, controlPoints[2].x, endX, endX);
+                        currentY = bezier(t, controlPoints[2].y, controlPoints[2].y, endY, endY);
+                    }
+
+                    butterfly.style.left = `${currentX}%`;
+                    butterfly.style.top = `${currentY}%`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(flyAnimation);
+                    } else {
+                        startWingFlap('hover');
+                        setTimeout(() => {
+                            currentLotusIndex++;
+                            startWingFlap('normal');
+                            flyToNextInOrder(targetPos);
+                        }, 1000);
+                    }
+                };
+
+                flyAnimation();
+            };
+
+            const bezier = (t, p0, p1, p2, p3) => {
+                const t2 = t*t;
+                const t3 = t2*t;
+                const mt = 1 - t;
+                const mt2 = mt * mt;
+                const mt3 = mt2 * mt;
+                return mt3 * p0 + 3 * mt2 * t * p1 + 3 * mt * t2 * p2 + t3 * p3;
+            };
+
+            flyToNextInOrder({ left: '15', top: '25' });
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clearInterval(animationInterval);
+            clearInterval(wingFlapInterval);
+            clearInterval(hoverInterval);
+            isAnimating = false;
+            isButterflyFlying = false;
+            currentLotusIndex = 0;
+            currentIndex = 0;
+            
+            butterfly.classList.remove('flying');
+            butterfly.style.left = '15%';
+            butterfly.style.top = '25%';
+            butterfly.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(1, 1)';
+            butterfly.style.opacity = 0;
+            
+            imgGroups.forEach((imgs) => {
+                imgs.forEach((img, idx) => {
+                    img.classList.remove('active');
+                    if (idx === 0) img.classList.add('active');
+                });
+            });
+
+            poetryPopup.classList.remove('show');
+            poetryPopup.textContent = '';
+            
+            openBtn.disabled = false;
+            openBtn.textContent = "绽放荷花";
+            butterflyBtn.disabled = false;
+            butterflyBtn.textContent = "蝴蝶飞舞";
+        });
+    </script>
+</body>
+</html>

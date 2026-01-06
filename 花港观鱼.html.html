@@ -1,0 +1,526 @@
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>花港观鱼 - 四季如画</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spring: '#4CAF50',
+            summer: '#FF9800',
+            autumn: '#E64A19',
+            winter: '#2196F3',
+            primary: '#2D3748',
+            secondary: '#718096',
+            light: '#F7FAFC',
+            dark: '#1A202C'
+          },
+          fontFamily: {
+            sans: ['PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03)',
+            'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            'btn': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          animation: {
+            'float': 'float 3s ease-in-out infinite alternate',
+            'fade-in': 'fadeIn 1s ease-in-out forwards',
+            'bounce-light': 'bounceLight 2s ease-in-out infinite'
+          },
+          keyframes: {
+            float: {
+              '0%': { transform: 'translateY(0px)' },
+              '100%': { transform: 'translateY(-10px)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            bounceLight: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-5px)' },
+            }
+          }
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .season-bg { @apply bg-cover bg-center bg-fixed; }
+      .season-btn { @apply px-6 py-3 rounded-full text-white font-medium cursor-pointer shadow-btn transition-all duration-300 ease-in-out; }
+      .content-card { @apply bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-card transition-all duration-500 hover:shadow-card-hover; }
+      .intro-card { @apply bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-500 hover:-translate-y-2; }
+      .text-shadow { @apply drop-shadow-sm; }
+      .section-padding { @apply py-16 md:py-24; }
+      .float-item { @apply animate-float; }
+      .fade-in-item { @apply opacity-0 animate-fade-in; }
+      .func-btn { @apply w-full md:w-64 py-6 rounded-2xl text-white font-bold text-xl shadow-lg transition-all duration-500 hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center gap-3; }
+      .back-btn { @apply px-6 py-3 bg-primary/90 text-white rounded-full font-medium shadow-lg hover:bg-primary hover:scale-105 transition-all duration-300 flex items-center gap-2; }
+    }
+
+    /* 寻找锦鲤小游戏样式 */
+    #game-title {
+        text-align: center;
+        color: #8b4513;
+        font-size: 28px;
+        margin: 10px 0;
+        font-weight: bold;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    #game-container {
+        position: relative;
+        width: 90vw;
+        height: 85vh;
+        margin: 2vh auto;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(139, 69, 19, 0.2);
+        overflow: hidden;
+        border: 4px solid #f5f0e6;
+    }
+    #game-bg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: opacity 0.5s ease;
+    }
+    .hidden-fish {
+        position: absolute;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        filter: drop-shadow(0 2px 6px rgba(255, 153, 0, 0.4));
+        z-index: 10;
+    }
+    .hidden-fish:hover {
+        transform: scale(1.2) rotate(5deg);
+        filter: drop-shadow(0 4px 10px rgba(255, 102, 0, 0.6));
+    }
+    #score-board {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #8b4513;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+    }
+    #win-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 40px 60px;
+        border-radius: 16px;
+        box-shadow: 0 15px 40px rgba(139, 69, 19, 0.3);
+        text-align: center;
+        display: none;
+        z-index: 30;
+        border: 2px solid #d2691e;
+    }
+    #win-modal h2 {
+        color: #c68c53;
+        font-size: 32px;
+        margin: 0 0 15px;
+    }
+    #win-modal p {
+        color: #666;
+        font-size: 16px;
+        margin: 0 0 20px;
+    }
+    #restart-btn {
+        background: linear-gradient(135deg, #d2691e, #b05616);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(210, 105, 30, 0.4);
+    }
+    #restart-btn:hover {
+        background: linear-gradient(135deg, #b05616, #994a12);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(210, 105, 30, 0.6);
+    }
+
+    /* 核心：控制各板块显示/隐藏，默认只显示主页面 */
+    .page {
+        display: none;
+        min-height: 100vh;
+        width: 100%;
+        position: relative;
+    }
+    .page.active {
+        display: block;
+    }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden font-sans bg-light text-primary">
+  <!-- 1. 主页面（背景图改为图3） -->
+  <div id="main-page" class="page active" style="
+    background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a913d9d2f3774a05b909730e33887fe9.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=8sbrmQLMrMu2Yyow4qtSxYBPwwc%3D');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  ">
+    <div style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.15);
+      z-index: 0;
+    "></div>
+
+    <div class="container mx-auto px-4 md:px-6 h-screen flex flex-col justify-center items-center relative z-10 text-center">
+      <h2 class="text-[clamp(2.5rem,5vw,4rem)] font-bold text-primary mb-16 text-shadow fade-in-item" style="animation-delay: 0.2s;">
+        花港观鱼 · 四季如画
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl fade-in-item" style="animation-delay: 0.6s;">
+        <button onclick="switchPage('seasons-page')" class="func-btn bg-summer/90">
+          <i class="fa fa-leaf text-3xl"></i>
+          <span>四季风光</span>
+        </button>
+        <button onclick="switchPage('intro-page')" class="func-btn bg-autumn/90">
+          <i class="fa fa-map-marker text-3xl"></i>
+          <span>景点介绍</span>
+        </button>
+        <button onclick="switchPage('interactive-page')" class="func-btn bg-winter/90">
+          <i class="fa fa-gamepad text-3xl"></i>
+          <span>互动体验</span>
+        </button>
+      </div>
+
+      <div class="absolute bottom-10 left-1/4 w-6 h-6 bg-spring/30 rounded-full float-item"></div>
+      <div class="absolute top-1/3 right-1/5 w-8 h-8 bg-summer/30 rounded-full float-item" style="animation-delay: 1s;"></div>
+      <div class="absolute bottom-20 right-1/4 w-5 h-5 bg-winter/30 rounded-full float-item" style="animation-delay: 0.5s;"></div>
+    </div>
+  </div>
+
+  <!-- 2. 四季风光页面 -->
+  <div id="seasons-page" class="page" style="
+    background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/081ca35cfc1245a182cb81cdd8e54553.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=G83hZEB65M0%2FP9ROPippYCffmeE%3D');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    transition: background-image 0.7s ease-in-out;
+  ">
+    <div style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.15);
+      z-index: 0;
+    "></div>
+
+    <div class="container mx-auto px-4 md:px-6 py-12 relative z-10">
+      <button onclick="switchPage('main-page')" class="back-btn mb-12 fade-in-item">
+        <i class="fa fa-arrow-left"></i>
+        <span>返回主页面</span>
+      </button>
+
+      <div class="text-center mb-16 fade-in-item">
+        <h2 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-primary mb-4 text-shadow">四季风光</h2>
+        <p class="text-secondary text-[clamp(1rem,2vw,1.2rem)] max-w-2xl mx-auto">
+          四季更迭，花港观鱼呈现出不同的景致，每一季都有独特的韵味
+        </p>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-4 md:gap-6 mb-12">
+        <button id="spring-btn" class="season-btn bg-spring hover:bg-spring/90 hover:scale-105 hover:shadow-lg" style="transform: scale(1.05);">
+          <i class="fa fa-leaf mr-2"></i> 春季
+        </button>
+        <button id="summer-btn" class="season-btn bg-summer hover:bg-summer/90 hover:scale-105 hover:shadow-lg">
+          <i class="fa fa-sun-o mr-2"></i> 夏季
+        </button>
+        <button id="autumn-btn" class="season-btn bg-autumn hover:bg-autumn/90 hover:scale-105 hover:shadow-lg">
+          <i class="fa fa-tree mr-2"></i> 秋季
+        </button>
+        <button id="winter-btn" class="season-btn bg-winter hover:bg-winter/90 hover:scale-105 hover:shadow-lg">
+          <i class="fa fa-snowflake-o mr-2"></i> 冬季
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+        <div class="rounded-2xl overflow-hidden shadow-card h-[400px] md:h-[500px] hover:shadow-card-hover transition-all duration-500 fade-in-item">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/081ca35cfc1245a182cb81cdd8e54553.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=G83hZEB65M0%2FP9ROPippYCffmeE%3D" alt="春季花港观鱼" class="w-full h-full object-cover transition-all duration-700 hover:scale-105" id="season-main-img">
+        </div>
+        <div class="content-card fade-in-item" style="animation-delay: 0.3s;" id="season-content">
+          <h3 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-spring mb-6" id="season-title">
+            <i class="fa fa-leaf mr-2"></i> 春季 · 繁花似锦
+          </h3>
+          <p class="text-secondary mb-8 leading-relaxed text-lg" id="season-desc">
+            春日的花港观鱼，百花齐放，姹紫嫣红。牡丹、芍药、海棠竞相开放，微风拂过，花香袭人。
+            湖面波光粼粼，锦鲤鱼群在水中嬉戏，岸边的柳树抽出新绿，随风摇曳，构成一幅生机勃勃的春日画卷。
+          </p>
+          <div class="flex flex-wrap gap-3" id="season-tags">
+            <span class="bg-spring/10 text-spring px-4 py-2 rounded-full text-sm font-medium hover:bg-spring/20 transition-colors duration-300">牡丹</span>
+            <span class="bg-spring/10 text-spring px-4 py-2 rounded-full text-sm font-medium hover:bg-spring/20 transition-colors duration-300">海棠</span>
+            <span class="bg-spring/10 text-spring px-4 py-2 rounded-full text-sm font-medium hover:bg-spring/20 transition-colors duration-300">新柳</span>
+            <span class="bg-spring/10 text-spring px-4 py-2 rounded-full text-sm font-medium hover:bg-spring/20 transition-colors duration-300">锦鳞</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 景点介绍页面 -->
+  <div id="intro-page" class="page bg-white">
+    <div class="container mx-auto px-4 md:px-6 py-12">
+      <button onclick="switchPage('main-page')" class="back-btn mb-12 fade-in-item">
+        <i class="fa fa-arrow-left"></i>
+        <span>返回主页面</span>
+      </button>
+
+      <div class="text-center mb-16 fade-in-item">
+        <h2 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-primary mb-4 text-shadow">景点介绍</h2>
+        <p class="text-secondary text-[clamp(1rem,2vw,1.2rem)] max-w-2xl mx-auto">
+          花港观鱼是西湖十景之一，位于西湖西南角，以花、港、鱼为特色的园林景观
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- 花景怡人：改为图5 -->
+        <div class="intro-card fade-in-item">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/1909fe58e3c4445bbbecdc1799f7f67d.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=IvJV%2FLuX1xaJ5QYqECsmgNSYiG4%3D" alt="花景" class="w-full h-48 md:h-56 object-cover transition-all duration-500 hover:scale-105">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+              <i class="fa fa-paint-brush mr-2 text-spring"></i>花景怡人
+            </h3>
+            <p class="text-secondary leading-relaxed">
+              园内种植了大量名贵花卉，四季花开不断，春季牡丹、夏季荷花、秋季桂花、冬季梅花，各具特色，是赏花爱好者的天堂。
+            </p>
+          </div>
+        </div>
+
+        <!-- 港湾风情：改为图1 -->
+        <div class="intro-card fade-in-item" style="animation-delay: 0.2s; transform: translateY(-10px);">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/081ca35cfc1245a182cb81cdd8e54553.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=G83hZEB65M0%2FP9ROPippYCffmeE%3D" alt="港湾风情" class="w-full h-48 md:h-56 object-cover transition-all duration-500 hover:scale-105">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+              <i class="fa fa-water mr-2 text-summer"></i>港湾风情
+            </h3>
+            <p class="text-secondary leading-relaxed">
+              花港地处西湖岸边，港湾曲折，水波荡漾，岸边绿树成荫，漫步在湖边步道，可尽情欣赏西湖的湖光山色。
+            </p>
+          </div>
+        </div>
+
+        <!-- 鱼乐无穷：改为图6 -->
+        <div class="intro-card fade-in-item" style="animation-delay: 0.4s;">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2cecb87b923e4a519e18e49881427477.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=uzsCayMgjTL8Cx9Zcu4%2FRJ8FMGE%3D" alt="鱼乐无穷" class="w-full h-48 md:h-56 object-cover transition-all duration-500 hover:scale-105">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center">
+              <i class="fa fa-fish mr-2 text-autumn"></i>鱼乐无穷
+            </h3>
+            <p class="text-secondary leading-relaxed">
+              园内有大型鱼池，数千条锦鲤鱼在水中畅游，游客可投喂观赏，鱼群争食的景象十分热闹有趣，深受小朋友喜爱。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 互动体验页面 -->
+  <div id="interactive-page" class="page bg-gray-50">
+    <div class="container mx-auto px-4 md:px-6 py-12">
+      <button onclick="switchPage('main-page')" class="back-btn mb-12 fade-in-item">
+        <i class="fa fa-arrow-left"></i>
+        <span>返回主页面</span>
+      </button>
+
+      <div class="text-center mb-16 fade-in-item">
+        <h2 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-primary mb-4 text-shadow">互动体验</h2>
+        <p class="text-secondary text-[clamp(1rem,2vw,1.2rem)] max-w-2xl mx-auto">
+          寻找隐藏的锦鲤，体验趣味小游戏，愿你收获满满好运
+        </p>
+      </div>
+
+      <h1 id="game-title">花港观鱼 · 寻找锦鲤</h1>
+      <div id="game-container" class="fade-in-item">
+          <img id="game-bg" src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/1ccf0404eb0f431dbdb51c41e1f32ad6.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=hytE6dpIRWqEVffFSU4GYUKQZvI%3D" alt="花港观鱼游戏背景">
+          <div id="score-board">已找到锦鲤: 0/5</div>
+          <div id="win-modal">
+              <h2>恭喜通关！🎉</h2>
+              <p>你找到了所有锦鲤，愿你好运连连~</p>
+              <button id="restart-btn">再来一局</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 页面切换函数
+    function switchPage(targetPageId) {
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      document.getElementById(targetPageId).classList.add('active');
+      if (targetPageId === 'interactive-page') {
+        resetFishGame();
+      }
+    }
+
+    // 四季切换数据
+    const seasonData = {
+      spring: {
+        img: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/081ca35cfc1245a182cb81cdd8e54553.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=G83hZEB65M0%2FP9ROPippYCffmeE%3D",
+        bgImg: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/081ca35cfc1245a182cb81cdd8e54553.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=G83hZEB65M0%2FP9ROPippYCffmeE%3D",
+        title: "春季 · 繁花似锦",
+        color: "spring",
+        desc: "春日的花港观鱼，百花齐放，姹紫嫣红。牡丹、芍药、海棠竞相开放，微风拂过，花香袭人。湖面波光粼粼，锦鲤鱼群在水中嬉戏，岸边的柳树抽出新绿，随风摇曳，构成一幅生机勃勃的春日画卷。",
+        tags: ["牡丹", "海棠", "新柳", "锦鳞"]
+      },
+      summer: {
+        img: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/942c840552e04b4d93093685f4d2b5ee.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=deS79fEacd3cGvljpLYxwvS3DaI%3D",
+        bgImg: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/942c840552e04b4d93093685f4d2b5ee.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=deS79fEacd3cGvljpLYxwvS3DaI%3D",
+        title: "夏季 · 荷风送香",
+        color: "summer",
+        desc: "夏日的花港观鱼，荷叶田田，荷花映日。满池的荷花竞相开放，粉的、白的，亭亭玉立，随风摇曳，送来阵阵清香。午后的阳光透过树叶洒下斑驳的光影，蝉鸣阵阵，锦鲤在荷叶间穿梭嬉戏。",
+        tags: ["荷花", "荷叶", "蝉鸣", "纳凉"]
+      },
+      autumn: {
+        img: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a913d9d2f3774a05b909730e33887fe9.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=8sbrmQLMrMu2Yyow4qtSxYBPwwc%3D",
+        bgImg: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/a913d9d2f3774a05b909730e33887fe9.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=8sbrmQLMrMu2Yyow4qtSxYBPwwc%3D",
+        title: "秋季 · 桂香满园",
+        color: "autumn",
+        desc: "秋日的花港观鱼，金桂飘香，层林尽染。园内的桂花树竞相开放，浓郁的桂花香弥漫在空气中，沁人心脾。岸边的树木换上了五彩的盛装，红的、黄的、橙的，与湖面的波光交相辉映。",
+        tags: ["桂花", "红叶", "金风", "秋阳"]
+      },
+      winter: {
+        img: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/0caf3c400c0049978459e4b2fb13ea26.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=jKrcaDl2VFex%2B8wlJ3EZY%2BymUZs%3D",
+        bgImg: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/0caf3c400c0049978459e4b2fb13ea26.jpg~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=jKrcaDl2VFex%2B8wlJ3EZY%2BymUZs%3D",
+        title: "冬季 · 雪韵悠然",
+        color: "winter",
+        desc: "冬日的花港观鱼，银装素裹，静谧悠然。雪花飘落，覆盖在枝头、湖面、亭台楼阁上，整个园林变成了白色的童话世界。梅花在雪中傲然绽放，暗香浮动，锦鲤在未结冰的水面中游动。",
+        tags: ["雪景", "梅花", "静谧", "银装"]
+      }
+    };
+
+    const seasonMainImg = document.getElementById('season-main-img');
+    const seasonTitle = document.getElementById('season-title');
+    const seasonDesc = document.getElementById('season-desc');
+    const seasonTags = document.getElementById('season-tags');
+    const seasonBtns = {
+      spring: document.getElementById('spring-btn'),
+      summer: document.getElementById('summer-btn'),
+      autumn: document.getElementById('autumn-btn'),
+      winter: document.getElementById('winter-btn')
+    };
+    const seasonsPage = document.getElementById('seasons-page');
+
+    // 初始化四季切换
+    function initSeasonSwitch() {
+      Object.keys(seasonBtns).forEach(season => {
+        seasonBtns[season].addEventListener('click', () => {
+          Object.values(seasonBtns).forEach(btn => {
+            btn.style.transform = 'scale(1)';
+          });
+          seasonBtns[season].style.transform = 'scale(1.05)';
+          updateSeasonContent(season);
+          seasonsPage.style.backgroundImage = `url('${seasonData[season].bgImg}')`;
+        });
+      });
+      updateSeasonContent('spring');
+    }
+
+    // 更新四季内容
+    function updateSeasonContent(season) {
+      const data = seasonData[season];
+      if (!data) return;
+
+      seasonMainImg.src = data.img;
+      seasonMainImg.alt = data.title;
+      seasonTitle.textContent = data.title;
+      seasonTitle.className = `text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-${data.color} mb-6`;
+      seasonDesc.textContent = data.desc;
+
+      seasonTags.innerHTML = '';
+      data.tags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = `bg-${data.color}/10 text-${data.color} px-4 py-2 rounded-full text-sm font-medium hover:bg-${data.color}/20 transition-colors duration-300`;
+        tagEl.textContent = tag;
+        seasonTags.appendChild(tagEl);
+      });
+    }
+
+    // 锦鲤游戏相关
+    const hiddenFishesConfig = [
+        { src: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2280cd752118479c9171b38506d696a6.png~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=%2Btw%2B4010vYqi2x7aUaiMBBxyY2U%3D", size: 50, x: "25%", y: "60%" },
+        { src: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/572e195213924297b6bb79d34241efd6.png~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=E%2BxB%2BrNBVLbGaxpo0tPyM%2FSr6Ko%3D", size: 45, x: "45%", y: "45%" },
+        { src: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/039e4daddde841098e39fc6ab31721f8.png~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=KFsQarcpGkTSurbTBMxLWPyJdwo%3D", size: 55, x: "60%", y: "70%" },
+        { src: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/2280cd752118479c9171b38506d696a6.png~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=%2Btw%2B4010vYqi2x7aUaiMBBxyY2U%3D", size: 40, x: "75%", y: "50%" },
+        { src: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/572e195213924297b6bb79d34241efd6.png~tplv-a9rns2rl98-image.png?rcl=202601051519396B75CF7705D982F8F1D5&rk3s=8e244e95&rrcfp=dafada99&x-expires=2083821579&x-signature=E%2BxB%2BrNBVLbGaxpo0tPyM%2FSr6Ko%3D", size: 35, x: "35%", y: "30%" }
+    ];
+    let foundCount = 0;
+    const totalFish = hiddenFishesConfig.length;
+
+    function createHiddenFishes() {
+        const container = document.getElementById('game-container');
+        hiddenFishesConfig.forEach(fish => {
+            const fishElem = document.createElement('img');
+            fishElem.src = fish.src;
+            fishElem.className = 'hidden-fish';
+            fishElem.style.width = fish.size + 'px';
+            fishElem.style.height = 'auto';
+            fishElem.style.left = fish.x;
+            fishElem.style.top = fish.y;
+            fishElem.onclick = () => {
+                fishElem.style.opacity = 0;
+                setTimeout(() => {
+                    fishElem.style.display = 'none';
+                }, 300);
+                foundCount++;
+                document.getElementById('score-board').textContent = `已找到锦鲤: ${foundCount}/${totalFish}`;
+                if (foundCount === totalFish) {
+                    setTimeout(() => {
+                        document.getElementById('win-modal').style.display = 'block';
+                    }, 500);
+                }
+            };
+            container.appendChild(fishElem);
+        });
+    }
+
+    function resetFishGame() {
+        const existingFishes = document.querySelectorAll('.hidden-fish');
+        existingFishes.forEach(fish => fish.remove());
+        foundCount = 0;
+        document.getElementById('score-board').textContent = `已找到锦鲤: 0/${totalFish}`;
+        document.getElementById('win-modal').style.display = 'none';
+        setTimeout(() => {
+            createHiddenFishes();
+        }, 100);
+    }
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        resetFishGame();
+    });
+
+    // 页面加载初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      initSeasonSwitch();
+      createHiddenFishes();
+    });
+  </script>
+</body>
+</html>
